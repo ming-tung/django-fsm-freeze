@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Django FSM data freeze support"
 authors = ["mingtung <mingtung.hong@gmail.com>"]
 license = "MIT"
+repository = "https://github.com/ming-tung/django-fsm-freeze"
 
 [tool.poetry.dependencies]
 python = "^3.9"
