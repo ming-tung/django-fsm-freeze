@@ -2,9 +2,10 @@
 name = "django-fsm-freeze"
 version = "0.1.0"
 description = "Django FSM data freeze support"
-authors = ["mingtung <mingtung.hong@gmail.com>"]
+authors = ["ming-tung <mingtung.hong@gmail.com>"]
 license = "MIT"
 repository = "https://github.com/ming-tung/django-fsm-freeze"
+exclude = ["mytest/", "my_django_fsm_freeze/"]
 
 [tool.poetry.dependencies]
 python = "^3.9"

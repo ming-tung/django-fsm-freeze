@@ -1,5 +1,5 @@
 """
-ASGI config for django_fsm_freeze project.
+ASGI config for my_django_fsm_freeze project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'django_fsm_freeze.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'my_django_fsm_freeze.settings')
 
 application = get_asgi_application()

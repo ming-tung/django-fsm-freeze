@@ -1,6 +1,6 @@
 import pytest
 
-from django_fsm_freeze_models.mixin import FreezeValidationError
+from django_fsm_freeze.models import FreezeValidationError
 from mytest.models import FakeModel
 
 

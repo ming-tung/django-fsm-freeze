@@ -1,5 +1,5 @@
 """
-WSGI config for django_fsm_freeze project.
+WSGI config for my_django_fsm_freeze project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'django_fsm_freeze.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'my_django_fsm_freeze.settings')
 
 application = get_wsgi_application()

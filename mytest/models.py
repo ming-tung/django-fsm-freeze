@@ -3,7 +3,7 @@ from enum import Enum
 from django.db import models
 from django_fsm import FSMField, transition
 
-from django_fsm_freeze_models.mixin import FreezableFSMModelMixin
+from django_fsm_freeze.models import FreezableFSMModelMixin
 
 
 class FakeStates(Enum):
