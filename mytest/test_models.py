@@ -13,21 +13,6 @@ def active_fake_obj():
 
 @pytest.mark.django_db
 class TestFreezableFSMModelMixin:
-    def test_non_frozen_fields_configuration_error(self):
-        assert not hasattr(FakeModel, 'fake_field')
-        _original_non_frozen_fields = FakeModel.NON_FROZEN_FIELDS
-        FakeModel.NON_FROZEN_FIELDS = ('fake_field',)
-
-        with pytest.raises(FreezeValidationError) as err:
-            _ = FakeModel.objects.create()
-
-        assert (
-            err.value.message_dict['fake_field'][0]
-            == '"fake_field" field does not exist.'
-        )
-
-        FakeModel.NON_FROZEN_FIELDS = _original_non_frozen_fields
-
     def test_fields_are_frozen_when_in_frozen_state(self):
         fake_obj = FakeModel.objects.create()
         fake_obj.activate()

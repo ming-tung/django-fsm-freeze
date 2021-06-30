@@ -1,7 +1,9 @@
 from collections import defaultdict
 
 from dirtyfields import DirtyFieldsMixin
-from django.core.exceptions import ValidationError
+from django.core.exceptions import FieldDoesNotExist, ValidationError
+from django.db.models.signals import class_prepared
+from django.dispatch import receiver
 
 
 class FreezeValidationError(ValidationError):
@@ -15,10 +17,6 @@ class FreezableFSMModelMixin(DirtyFieldsMixin):
     FROZEN_IN_STATES = ()
     NON_FROZEN_FIELDS = ('state',)
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.config_check()
-
     def freeze_check(self) -> None:
         errors = defaultdict(list)
         if self.state in self.FROZEN_IN_STATES:
@@ -31,10 +29,13 @@ class FreezableFSMModelMixin(DirtyFieldsMixin):
         if errors:
             raise FreezeValidationError(errors)
 
-    def config_check(self) -> None:
+    @classmethod
+    def config_check(cls) -> None:
         errors = defaultdict(list)
-        for field in self.NON_FROZEN_FIELDS:
-            if not hasattr(self, field):
+        for field in cls.NON_FROZEN_FIELDS:
+            try:
+                cls._meta.get_field(field)
+            except FieldDoesNotExist:
                 errors[field].append(f'"{field}" field does not exist.')
         if errors:
             raise FreezeValidationError(errors)
@@ -60,3 +61,9 @@ class FreezableFSMModelMixin(DirtyFieldsMixin):
                 f'{self!r} is frozen, cannot be deleted.'
             )
         return super().delete(*args, **kwargs)
+
+
+@receiver(class_prepared)
+def on_class_prepared(sender, **kwargs):
+    if issubclass(sender, FreezableFSMModelMixin):
+        sender.config_check()
