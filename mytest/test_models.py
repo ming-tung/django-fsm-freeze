@@ -26,8 +26,7 @@ class TestFreezableFSMModelMixin:
 
         assert (
             err.value.message_dict['cannot_change_me'][0]
-            == f'The "cannot_change_me" field is frozen, but attempting to change it from'
-            f' False to True ({fake_obj!r})'
+            == 'Cannot change frozen field.'
         )
 
     def test_fields_not_frozen_when_in_frozen_state(self, active_fake_obj):

@@ -22,10 +22,7 @@ class FreezableFSMModelMixin(DirtyFieldsMixin):
         if self.state in self.FROZEN_IN_STATES:
             dirty_fields = self.get_dirty_fields(check_relationship=True)
             for field in set(dirty_fields) - set(self.NON_FROZEN_FIELDS):
-                errors[field].append(
-                    f'The "{field}" field is frozen, but attempting to change it from'
-                    f' {dirty_fields[field]} to {getattr(self, field)} ({self!r})'
-                )
+                errors[field].append('Cannot change frozen field.')
         if errors:
             raise FreezeValidationError(errors)
 
