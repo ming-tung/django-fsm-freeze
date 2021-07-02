@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "django-fsm-freeze"
-version = "0.1.4"
+version = "0.1.5"
 description = "django-fsm data immutability support"
 authors = ["ming-tung <mingtung.hong@gmail.com>"]
 license = "MIT"
@@ -10,15 +10,15 @@ exclude = ["mytest/", "my_django_fsm_freeze/"]
 [tool.poetry.dependencies]
 python = "^3.9"
 Django = "~3.1.12"
-pytest = "^6.2.4"
 django-fsm = "^2.7.1"
 django-dirtyfields = "^1.7.0"
-pytest-django = "^4.4.0"
-black = "^21.6b0"
-isort = "^5.9.1"
-flake8 = "^3.9.2"
 
 [tool.poetry.dev-dependencies]
+flake8 = "^3.9.2"
+pytest = "^6.2.4"
+isort = "^5.9.1"
+black = "^21.6b0"
+pytest-django = "^4.4.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
