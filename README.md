@@ -1,4 +1,5 @@
 # django-fsm-freeze
+[![CircleCI](https://circleci.com/gh/ming-tung/django-fsm-freeze.svg?style=shield)](https://app.circleci.com/pipelines/github/ming-tung/django-fsm-freeze?branch=main)
 [![PyPI version](https://badge.fury.io/py/django-fsm-freeze.svg)](https://badge.fury.io/py/django-fsm-freeze)
 [![Downloads](https://static.pepy.tech/personalized-badge/django-fsm-freeze?period=total&units=international_system&left_color=grey&right_color=yellowgreen&left_text=Downloads)](https://pepy.tech/project/django-fsm-freeze)
 
