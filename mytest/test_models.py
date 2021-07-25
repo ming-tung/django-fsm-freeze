@@ -34,7 +34,8 @@ class TestFreezableFSMModelMixin:
         FakeModel.NON_FROZEN_FIELDS = ('state', 'cannot_change_me')
 
         active_fake_obj.cannot_change_me = True
-        active_fake_obj.save()  # no error raised because 'cannot_change_me' is not frozen
+        # no error raised because 'cannot_change_me' is not frozen
+        active_fake_obj.save()
 
         FakeModel.NON_FROZEN_FIELDS = _original_non_frozen_fields
 

@@ -38,9 +38,9 @@ class FreezableFSMModelMixin(DirtyFieldsMixin):
             raise FreezeValidationError(errors)
 
     def save(self, *args, **kwargs) -> None:
-        """
-        Data freeze checking before saving the object, except when 'update_fields' kwarg
-        is passed in. Meaning, one can use 'update_fields' to bypass freeze check.
+        """Data freeze checking before saving the object.
+
+        Note: checking is skipped when 'update_fields' kwarg is passed in.
         """
 
         # updated_fields is to bypass checking

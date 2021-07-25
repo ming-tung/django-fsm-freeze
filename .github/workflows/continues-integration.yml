@@ -21,6 +21,10 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Setup poetry
         uses: Gr1N/setup-poetry@v7
+      - uses: actions/cache@v2
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
       - run: |
           poetry --version
       - name: Install dependencies
@@ -28,20 +32,20 @@ jobs:
           poetry install
       - name: Run isort
         run: |
-          poetry run isort .
+          poetry run isort . --check
       - name: Run black
         run: |
-          poetry run black .
-#      - name: Run flake8
-#        run: |
-#          poetry run flake8
+          poetry run black --check --diff .
+      - name: Run flake8
+        run: |
+          poetry run flake8 .
       - name: Run pytest
         run: |
           poetry run pytest
 
   deploy:
+    name: Build and Publish on release
     # Only publish the package when a release is published
-    name: Build and Publish to PyPI on release
     if: github.event.action == 'published'
     needs:
       - run-test
@@ -54,6 +58,10 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Setup poetry
         uses: Gr1N/setup-poetry@v7
+      - uses: actions/cache@v2
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
       - run: |
           poetry --version
       - name: Build and Push to PyPI
