@@ -1,5 +1,5 @@
 # django fsm data immutability support
-[![CircleCI](https://circleci.com/gh/ming-tung/django-fsm-freeze.svg?style=shield)](https://app.circleci.com/pipelines/github/ming-tung/django-fsm-freeze?branch=main)
+![CI](https://github.com/ming-tung/django-fsm-freeze/actions/workflows/continues-integration.yml/badge.svg?branch=main)
 [![PyPI version](https://badge.fury.io/py/django-fsm-freeze.svg)](https://badge.fury.io/py/django-fsm-freeze)
 [![Downloads](https://static.pepy.tech/personalized-badge/django-fsm-freeze?period=total&units=international_system&left_color=grey&right_color=yellowgreen&left_text=Downloads)](https://pepy.tech/project/django-fsm-freeze)
 
