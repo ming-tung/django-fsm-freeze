@@ -42,7 +42,7 @@ jobs:
   deploy:
     # Only publish the package when a release is published
     name: Build and Publish to PyPI on release
-    if: github.event == 'release'
+    if: github.event.action == 'published'
     needs:
       - run-test
     runs-on: ubuntu-latest
