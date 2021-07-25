@@ -1,0 +1,64 @@
+name: Continues Integration
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '!*'
+  pull_request:
+  release:
+    types: [published]
+env:
+  PYTHON_VERSION: 3.9
+jobs:
+  run-test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Setup poetry
+        uses: Gr1N/setup-poetry@v7
+      - run: |
+          poetry --version
+      - name: Install dependencies
+        run: |
+          poetry install
+      - name: Run isort
+        run: |
+          poetry run isort .
+      - name: Run black
+        run: |
+          poetry run black .
+#      - name: Run flake8
+#        run: |
+#          poetry run flake8
+      - name: Run pytest
+        run: |
+          poetry run pytest
+
+  deploy:
+    # Only publish the package when a release is published
+    name: Build and Publish to PyPI on release
+    if: github.event == 'release'
+    needs:
+      - run-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Setup poetry
+        uses: Gr1N/setup-poetry@v7
+      - run: |
+          poetry --version
+      - name: Build and Push to PyPI
+        run: |
+          poetry config pypi-token.pypi ${{ secrets.POETRY_CI_TOKEN }}
+          poetry publish --build --no-interaction
