@@ -13,7 +13,7 @@ django-fsm-freeze provides a django model mixin for data immutability based on
 pip install django-fsm-freeze
 ```
 
-## Usage
+## Configuration
 
 - Add `FreezableFSMModelMixin` to your [django-fsm](https://github.com/viewflow/django-fsm) model
 - Specify the `FROZEN_IN_STATES` in which the object should be frozen, meaning the
@@ -53,4 +53,18 @@ class MyDjangoFSMModel(FreezableFSMModelMixin, models.Model):
 
 ```
 
-See example usage also in https://github.com/ming-tung/django-fsm-freeze/blob/main/mytest/models.py
+See configuration example in https://github.com/ming-tung/django-fsm-freeze/blob/main/mytest/models.py
+
+## Usage
+
+The frozen check takes place when
+ - class is prepared (configuration checking)
+ - `object.save()`
+ - `object.delete()`
+
+In case of trying to save/delete a frozen object, a `FreezeValidationError` will be raised.
+
+*Note* that in the current design, passing `update_fields` kwarg in `.save()` will bypass the frozen check,
+because here we assume it's user's intention to save the specified fields without trouble/raising error.
+
+See usage example in tests https://github.com/ming-tung/django-fsm-freeze/blob/main/mytest/test_models.py
