@@ -2,6 +2,7 @@ from collections import defaultdict
 
 from dirtyfields import DirtyFieldsMixin
 from django.core.exceptions import FieldDoesNotExist, ValidationError
+from django.db import models
 from django.db.models.signals import class_prepared
 from django.dispatch import receiver
 
@@ -10,7 +11,7 @@ class FreezeValidationError(ValidationError):
     pass
 
 
-class FreezableFSMModelMixin(DirtyFieldsMixin):
+class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
     class Meta:
         abstract = True
 

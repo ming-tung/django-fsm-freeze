@@ -36,7 +36,7 @@ from django_fsm import FSMField
 
 from django_fsm_freeze.models import FreezableFSMModelMixin
 
-class MyDjangoFSMModel(FreezableFSMModelMixin, models.Model):
+class MyDjangoFSMModel(FreezableFSMModelMixin):
 
     # In this example, when object is in the 'active' state, it is immutable.
     FROZEN_IN_STATES = ('active', )
