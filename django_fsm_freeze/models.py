@@ -5,6 +5,7 @@ from django.core.exceptions import FieldDoesNotExist, ValidationError
 from django.db import models
 from django.db.models.signals import class_prepared
 from django.dispatch import receiver
+from django_fsm import FSMField
 
 
 class FreezeValidationError(ValidationError):
@@ -15,12 +16,13 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
     class Meta:
         abstract = True
 
-    FROZEN_IN_STATES = ()
-    NON_FROZEN_FIELDS = ('state',)
+    FROZEN_IN_STATES: tuple = ()
+    FSM_STATE_FIELD_NAME: str = 'state'
+    NON_FROZEN_FIELDS: tuple = (FSM_STATE_FIELD_NAME,)
 
     def freeze_check(self) -> None:
         errors = defaultdict(list)
-        if self.state in self.FROZEN_IN_STATES:
+        if getattr(self, self.FSM_STATE_FIELD_NAME) in self.FROZEN_IN_STATES:
             dirty_fields = self.get_dirty_fields(check_relationship=True)
             for field in set(dirty_fields) - set(self.NON_FROZEN_FIELDS):
                 errors[field].append('Cannot change frozen field.')
@@ -30,11 +32,23 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
     @classmethod
     def config_check(cls) -> None:
         errors = defaultdict(list)
+        try:
+            fsm_state_field = cls._meta.get_field(cls.FSM_STATE_FIELD_NAME)
+        except FieldDoesNotExist:
+            errors['FSM_STATE_FIELD_NAME'].append(
+                f'{cls.FSM_STATE_FIELD_NAME!r} field does not exist.'
+            )
+        else:
+            if not isinstance(fsm_state_field, FSMField):
+                errors['FSM_STATE_FIELD_NAME'].append(
+                    f'{cls.FSM_STATE_FIELD_NAME!r} must be an FSMField.'
+                )
+
         for field in cls.NON_FROZEN_FIELDS:
             try:
                 cls._meta.get_field(field)
             except FieldDoesNotExist:
-                errors[field].append(f'"{field}" field does not exist.')
+                errors[field].append(f'{field!r} field does not exist.')
         if errors:
             raise FreezeValidationError(errors)
 
@@ -54,7 +68,7 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        if self.state in self.FROZEN_IN_STATES:
+        if getattr(self, self.FSM_STATE_FIELD_NAME) in self.FROZEN_IN_STATES:
             raise FreezeValidationError(
                 f'{self!r} is frozen, cannot be deleted.'
             )
