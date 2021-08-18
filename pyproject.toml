@@ -20,6 +20,7 @@ pytest = "^6.2.4"
 isort = "^5.9.1"
 black = "^21.6b0"
 pytest-django = "^4.4.0"
+django-stubs = "^1.8.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
