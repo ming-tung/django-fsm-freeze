@@ -12,9 +12,7 @@ class FakeStates(Enum):
     ARCHIVED = 'archived'
 
 
-class FakeModel(FreezableFSMModelMixin, models.Model):
-    class Meta:
-        abstract = False
+class FakeModel(FreezableFSMModelMixin):
 
     FROZEN_IN_STATES = (
         FakeStates.ACTIVE.value,
