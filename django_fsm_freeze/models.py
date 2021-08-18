@@ -5,6 +5,7 @@ from django.core.exceptions import FieldDoesNotExist, ValidationError
 from django.db import models
 from django.db.models.signals import class_prepared
 from django.dispatch import receiver
+from django_fsm import FSMField
 
 
 class FreezeValidationError(ValidationError):
@@ -31,11 +32,23 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
     @classmethod
     def config_check(cls) -> None:
         errors = defaultdict(list)
+        try:
+            fsm_state_field = cls._meta.get_field(cls.FSM_STATE_FIELD_NAME)
+        except FieldDoesNotExist:
+            errors[cls.FSM_STATE_FIELD_NAME].append(
+                f'{cls.FSM_STATE_FIELD_NAME!r} field does not exist.'
+            )
+        else:
+            if not isinstance(fsm_state_field, FSMField):
+                errors[cls.FSM_STATE_FIELD_NAME].append(
+                    f'{cls.FSM_STATE_FIELD_NAME!r} must be an FSMField.'
+                )
+
         for field in cls.NON_FROZEN_FIELDS:
             try:
                 cls._meta.get_field(field)
             except FieldDoesNotExist:
-                errors[field].append(f'"{field}" field does not exist.')
+                errors[field].append(f'{field!r} field does not exist.')
         if errors:
             raise FreezeValidationError(errors)
 
