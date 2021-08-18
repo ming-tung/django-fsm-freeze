@@ -5,7 +5,7 @@ from django_fsm_freeze.exceptions import (
     FreezeValidationError,
 )
 from django_fsm_freeze.models import bypass_fsm_freeze
-from mytest.models import FakeModel, FakeModel2
+from mytest.models import FakeModel, FakeModel2, SubFakeModel, SubSubFakeModel
 
 
 @pytest.fixture
@@ -250,3 +250,74 @@ class TestBypassFreezeCheck:
 
         assert FakeModel.objects.count() == 0
         assert FakeModel2.objects.count() == 1
+
+    @pytest.mark.parametrize(
+        'prop', ['FROZEN_IN_STATES', 'FROZEN_STATE_LOOKUP_FIELD']
+    )
+    def test_frozen_delegate_exclusive(self, prop, mocker):
+        mocker.patch.object(FakeModel, 'FROZEN_DELEGATE_TO', 'anything')
+        mocker.patch.object(
+            FakeModel, 'FROZEN_STATE_LOOKUP_FIELD', 'state', create=True
+        )
+        with pytest.raises(FreezeConfigurationError) as err:
+            FakeModel.config_check()
+
+        assert err.value.message_dict[prop] == [
+            'Field FROZEN_DELEGATE_TO is already defined.'
+        ]
+
+
+@pytest.mark.django_db
+class TestDelegationFreezeCheck:
+    def test_delegation_freeze_check(self, active_fake_obj):
+        sub_fake = SubFakeModel.objects.create(fake_model=active_fake_obj)
+        sub_sub_fake = SubSubFakeModel.objects.create(sub_fake_model=sub_fake)
+        with pytest.raises(FreezeValidationError) as err:
+            sub_fake.delete()
+
+        assert (
+            err.value.message == f'{sub_fake!r} is frozen, cannot be deleted.'
+        )
+        sub_fake.cannot_change_me = True
+        sub_fake.can_change_me = True
+
+        with pytest.raises(FreezeValidationError) as err:
+            sub_fake.save()
+
+        assert (
+            err.value.message_dict['cannot_change_me'][0]
+            == 'Cannot change frozen field.'
+        )
+        with pytest.raises(FreezeValidationError) as err:
+            sub_sub_fake.delete()
+
+        assert (
+            err.value.message
+            == f'{sub_sub_fake!r} is frozen, cannot be deleted.'
+        )
+        sub_sub_fake.cannot_change_me = True
+
+        with pytest.raises(FreezeValidationError) as err:
+            sub_sub_fake.save()
+
+        assert (
+            err.value.message_dict['cannot_change_me'][0]
+            == 'Cannot change frozen field.'
+        )
+
+        with bypass_fsm_freeze(sub_sub_fake):
+            sub_sub_fake.save()  # no error raised
+        assert sub_sub_fake.cannot_change_me
+
+    def test_delegation_freeze_check_error(self, active_fake_obj):
+        sub_fake = SubFakeModel.objects.create(fake_model=active_fake_obj)
+        previous_value = SubFakeModel.FROZEN_DELEGATE_TO
+        try:
+            SubFakeModel.FROZEN_DELEGATE_TO = 'another_model'
+            with pytest.raises(FreezeConfigurationError) as err:
+                sub_fake.freeze_check()
+            assert err.value.message_dict['FROZEN_DELEGATE_TO'] == [
+                'Does not resolve to a FreezableFSMModelMixin model.'
+            ]
+        finally:
+            SubFakeModel.FROZEN_DELEGATE_TO = previous_value

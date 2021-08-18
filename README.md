@@ -57,6 +57,20 @@ class MyDjangoFSMModel(FreezableFSMModelMixin):
 
 See configuration example in https://github.com/ming-tung/django-fsm-freeze/blob/main/mytest/models.py
 
+Additionally, if the state is resolvable to another model, using foreign keys, it is possible to specify to path to that field to instruct the freezable model instance to evaluate the freezable state from that remote field.
+
+```python
+class Parent(FreezableFSMModelMixin):
+    state = FSMField(default='new')
+
+
+class Child(FreezableFSMModelMixin):
+
+    # Assign this with the path (dotted separated) to the instance you expect
+    # the decision for freezability to be decided on.
+    FROZEN_DELEGATE_TO = 'parent'
+    parent = models.ForeignKey(Parent, on_delete=models.PROTECT)
+```
 ## Usage
 
 The frozen check takes place when
