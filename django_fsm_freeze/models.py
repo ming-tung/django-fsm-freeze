@@ -35,12 +35,12 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
         try:
             fsm_state_field = cls._meta.get_field(cls.FSM_STATE_FIELD_NAME)
         except FieldDoesNotExist:
-            errors[cls.FSM_STATE_FIELD_NAME].append(
+            errors['FSM_STATE_FIELD_NAME'].append(
                 f'{cls.FSM_STATE_FIELD_NAME!r} field does not exist.'
             )
         else:
             if not isinstance(fsm_state_field, FSMField):
-                errors[cls.FSM_STATE_FIELD_NAME].append(
+                errors['FSM_STATE_FIELD_NAME'].append(
                     f'{cls.FSM_STATE_FIELD_NAME!r} must be an FSMField.'
                 )
 
