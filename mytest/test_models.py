@@ -1,7 +1,7 @@
 import pytest
 
 from django_fsm_freeze.models import FreezeValidationError
-from mytest.models import FakeModel
+from mytest.models import FakeModel, FakeModel2
 
 
 @pytest.fixture
@@ -74,3 +74,7 @@ class TestFreezableFSMModelMixin:
             err.value.message
             == f'{active_fake_obj!r} is frozen, cannot be deleted.'
         )
+
+    def test_state_name_can_differ(self):
+        fake_obj = FakeModel2.objects.create()
+        assert fake_obj.status == 'new'

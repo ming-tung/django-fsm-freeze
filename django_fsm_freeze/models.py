@@ -15,12 +15,13 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
     class Meta:
         abstract = True
 
-    FROZEN_IN_STATES = ()
-    NON_FROZEN_FIELDS = ('state',)
+    FROZEN_IN_STATES: tuple = ()
+    FSM_STATE_FIELD_NAME: str = 'state'
+    NON_FROZEN_FIELDS: tuple = (FSM_STATE_FIELD_NAME,)
 
     def freeze_check(self) -> None:
         errors = defaultdict(list)
-        if self.state in self.FROZEN_IN_STATES:
+        if getattr(self, self.FSM_STATE_FIELD_NAME) in self.FROZEN_IN_STATES:
             dirty_fields = self.get_dirty_fields(check_relationship=True)
             for field in set(dirty_fields) - set(self.NON_FROZEN_FIELDS):
                 errors[field].append('Cannot change frozen field.')
@@ -54,7 +55,7 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        if self.state in self.FROZEN_IN_STATES:
+        if getattr(self, self.FSM_STATE_FIELD_NAME) in self.FROZEN_IN_STATES:
             raise FreezeValidationError(
                 f'{self!r} is frozen, cannot be deleted.'
             )

@@ -42,3 +42,34 @@ class FakeModel(FreezableFSMModelMixin):
     )
     def archive(self, *args, **kwargs) -> None:
         pass
+
+
+class FakeModel2(FreezableFSMModelMixin):
+
+    FROZEN_IN_STATES = (
+        FakeStates.ACTIVE.value,
+        FakeStates.ARCHIVED.value,
+    )
+    FSM_STATE_FIELD_NAME = 'status'
+    NON_FROZEN_FIELDS = (FSM_STATE_FIELD_NAME, 'can_change_me')
+
+    status = FSMField(default=FakeStates.NEW.value)
+
+    cannot_change_me = models.BooleanField(default=False)
+    can_change_me = models.BooleanField(default=False)
+
+    @transition(
+        field=status,
+        source=FakeStates.NEW.value,
+        target=FakeStates.ACTIVE.value,
+    )
+    def activate(self, *args, **kwargs) -> None:
+        pass
+
+    @transition(
+        field=status,
+        source=FakeStates.ACTIVE.value,
+        target=FakeStates.ARCHIVED.value,
+    )
+    def archive(self, *args, **kwargs) -> None:
+        pass
