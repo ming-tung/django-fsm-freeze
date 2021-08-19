@@ -45,10 +45,9 @@ class MyDjangoFSMModel(FreezableFSMModelMixin):
         'a_mutable_field',
     )
 
-    # Assign this with the name of the`FSMField` if it is not 'state'.
-    # If your are using 'state' as the `FSMField` in your model, you can leave this one out.
+    # Assign this with the name of the `FSMField` if your models has multiple FSMFields.
     # See example in `mytest/models.py:FakeModel2`
-    FSM_STATE_FIELD_NAME = 'state'
+    FROZEN_STATE_LOOKUP_FIELD = 'state'
 
     # This field is mutable even when the object is in the frozen state.
     a_mutable_field = models.BooleanField()
