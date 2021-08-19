@@ -115,13 +115,6 @@ description = "Django friendly finite state machine support."
 category = "main"
 optional = false
 python-versions = "*"
-develop = false
-
-[package.source]
-type = "git"
-url = "https://github.com/infarm/django-fsm.git"
-reference = "ac138c6f03bf7479e65c7fca9d0660020967fc4b"
-resolved_reference = "ac138c6f03bf7479e65c7fca9d0660020967fc4b"
 
 [[package]]
 name = "flake8"
@@ -315,7 +308,7 @@ python-versions = ">=3.6"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "5c86545b3496e84c16fe042767047c0048faad3fae22e2e1b870e46a4a20eb90"
+content-hash = "e1126103f5e1c5f7459c0851bcd130ffee269ecf5d99c942bebddf9b560286b2"
 
 [metadata.files]
 appdirs = [
@@ -353,7 +346,10 @@ django-dirtyfields = [
     {file = "django-dirtyfields-1.7.0.tar.gz", hash = "sha256:76fd01c69e077fd39f49376d9684d04188b821dafd342bf82d935036ff2f5946"},
     {file = "django_dirtyfields-1.7.0-py3-none-any.whl", hash = "sha256:ed8d780d439281372ca1dd301b21d6536b950dad3c32f95740e8236c0ed423bc"},
 ]
-django-fsm = []
+django-fsm = [
+    {file = "django-fsm-2.7.1.tar.gz", hash = "sha256:219b204777a932720d8583cb1f34713bd08b4713e1beb39ab2e674810e21d5e9"},
+    {file = "django_fsm-2.7.1-py2.py3-none-any.whl", hash = "sha256:c96a844853de0f5dc67791b64beb367b5d56f992dff7c00f9b88c483e09f15ec"},
+]
 flake8 = [
     {file = "flake8-3.9.2-py2.py3-none-any.whl", hash = "sha256:bf8fd333346d844f616e8d47905ef3a3384edae6b4e9beb0c5101e25e3110907"},
     {file = "flake8-3.9.2.tar.gz", hash = "sha256:07528381786f2a6237b061f6e96610a4167b226cb926e2aa2b6b1d78057c576b"},
