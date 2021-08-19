@@ -12,7 +12,7 @@ exclude = ["mytest/", "my_django_fsm_freeze/"]
 python = "^3.9"
 Django = "*"
 # unpin when https://github.com/viewflow/django-fsm/issues/256 is merged and released
-django-fsm = {git = "https://github.com/infarm/django-fsm.git", rev = "ac138c6f03bf7479e65c7fca9d0660020967fc4b"}
+django-fsm = "*"
 django-dirtyfields = "^1.7.0"
 
 [tool.poetry.dev-dependencies]
