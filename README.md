@@ -70,10 +70,10 @@ The frozen check takes place when
 
 In case of trying to save/delete a frozen object, a `FreezeValidationError` will be raised.
 
-*Note* that in the current design, passing `update_fields` kwarg in `.save()` will bypass the frozen check,
-because here we assume it's user's intention to save the specified fields without trouble/raising error.
-
-See usage example in tests https://github.com/ming-tung/django-fsm-freeze/blob/main/mytest/test_models.py
+If you want to bypass the frozen check for some reason, you can use the contextmanager
+`bypass_fsm_freeze()` given the freezable object(s). Then django-fsm-freeze won't do the
+checking on `.save()` and `.delete()`.
+You can find some usage example in test `mytest/test_models.py:TestBypassFreezeCheck`.
 
 # Development
 This is for contributors or developers of the project.

@@ -1,6 +1,6 @@
 import pytest
 
-from django_fsm_freeze.models import FreezeValidationError
+from django_fsm_freeze.models import FreezeValidationError, bypass_fsm_freeze
 from mytest.models import FakeModel, FakeModel2
 
 
@@ -28,6 +28,9 @@ class TestFreezableFSMModelMixin:
             err.value.message_dict['cannot_change_me'][0]
             == 'Cannot change frozen field.'
         )
+        fake_obj.refresh_from_db()
+        assert fake_obj.cannot_change_me is False
+        assert fake_obj.can_change_me is False
 
     def test_fields_not_frozen_when_in_frozen_state(self, active_fake_obj):
         _original_non_frozen_fields = FakeModel.NON_FROZEN_FIELDS
@@ -36,6 +39,8 @@ class TestFreezableFSMModelMixin:
         active_fake_obj.cannot_change_me = True
         # no error raised because 'cannot_change_me' is not frozen
         active_fake_obj.save()
+        active_fake_obj.refresh_from_db()
+        assert active_fake_obj.cannot_change_me is True
 
         FakeModel.NON_FROZEN_FIELDS = _original_non_frozen_fields
 
@@ -47,6 +52,9 @@ class TestFreezableFSMModelMixin:
 
         fake_obj.cannot_change_me = True
         fake_obj.save()  # no error raised
+
+        fake_obj.refresh_from_db()
+        assert fake_obj.cannot_change_me is True
 
     def test_freeze_works_with_fsm_transitions(
         self,
@@ -93,4 +101,47 @@ class TestFreezableFSMModelMixin:
             FakeModel2.config_check()
         assert err.value == FreezeValidationError(
             {'FROZEN_STATE_LOOKUP_FIELD': 'FSMField not found.'}
+        )
+
+
+@pytest.mark.django_db
+class TestBypassFreezeCheck:
+    def test_bypass_fsm_freeze_input_list(self, active_fake_obj):
+        active_fake_obj.cannot_change_me = True
+
+        with bypass_fsm_freeze([active_fake_obj]):
+            active_fake_obj.save()  # no error raised
+
+        active_fake_obj.refresh_from_db()
+        assert active_fake_obj.cannot_change_me is True
+
+    def test_bypass_fsm_freeze_on_save(self, active_fake_obj):
+        active_fake_obj.cannot_change_me = True
+        with pytest.raises(FreezeValidationError):
+            active_fake_obj.save()
+
+        with bypass_fsm_freeze(active_fake_obj):
+            active_fake_obj.save()  # no error raised
+
+        active_fake_obj.refresh_from_db()
+        assert active_fake_obj.cannot_change_me is True
+
+    def test_bypass_fsm_freeze_on_delete(self, active_fake_obj):
+        with pytest.raises(FreezeValidationError):
+            active_fake_obj.delete()
+
+        with bypass_fsm_freeze(active_fake_obj):
+            active_fake_obj.delete()  # no error raised
+
+    def test_bypass_fsm_freeze_input_not_a_freezable_obj(self):
+        not_a_freezable_obj = object()
+
+        with pytest.raises(FreezeValidationError) as err:
+            with bypass_fsm_freeze(not_a_freezable_obj):
+                pass
+
+        assert err.value == FreezeValidationError(
+            f'Unsupported argument {not_a_freezable_obj!r}. '
+            f'`bypass_fsm_freeze()` accepts instance(s) from '
+            f'FreezableFSMModelMixin.'
         )
