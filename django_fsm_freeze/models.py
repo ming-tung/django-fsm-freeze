@@ -1,4 +1,5 @@
 from collections import defaultdict
+from collections.abc import Iterable
 from contextlib import contextmanager
 from typing import Optional, Union
 
@@ -15,11 +16,9 @@ class FreezeValidationError(ValidationError):
 
 
 @contextmanager
-def bypass_fsm_freeze(objs: Union[object, list]):
-    if isinstance(objs, list):
-        pass
-    else:
-        objs = [objs]
+def bypass_fsm_freeze(objs: Union[object, Iterable]):
+    if not isinstance(objs, Iterable):
+        objs = (objs,)
     for obj in objs:
         if not isinstance(obj, FreezableFSMModelMixin):
             raise FreezeValidationError(
@@ -27,11 +26,13 @@ def bypass_fsm_freeze(objs: Union[object, list]):
                 f'`bypass_fsm_freeze()` accepts instance(s) from '
                 f'FreezableFSMModelMixin.'
             )
-    for obj in objs:
-        obj._bypass_fsm_freeze = True
-    yield
-    for obj in objs:
-        obj._bypass_fsm_freeze = False
+    try:
+        for obj in objs:
+            obj._bypass_fsm_freeze = True
+        yield
+    finally:
+        for obj in objs:
+            obj._bypass_fsm_freeze = False
 
 
 class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
