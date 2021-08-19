@@ -28,6 +28,9 @@ class TestFreezableFSMModelMixin:
             err.value.message_dict['cannot_change_me'][0]
             == 'Cannot change frozen field.'
         )
+        fake_obj.refresh_from_db()
+        assert fake_obj.cannot_change_me is False
+        assert fake_obj.can_change_me is False
 
     def test_fields_not_frozen_when_in_frozen_state(self, active_fake_obj):
         _original_non_frozen_fields = FakeModel.NON_FROZEN_FIELDS
@@ -36,6 +39,8 @@ class TestFreezableFSMModelMixin:
         active_fake_obj.cannot_change_me = True
         # no error raised because 'cannot_change_me' is not frozen
         active_fake_obj.save()
+        active_fake_obj.refresh_from_db()
+        assert active_fake_obj.cannot_change_me is True
 
         FakeModel.NON_FROZEN_FIELDS = _original_non_frozen_fields
 
@@ -47,6 +52,9 @@ class TestFreezableFSMModelMixin:
 
         fake_obj.cannot_change_me = True
         fake_obj.save()  # no error raised
+
+        fake_obj.refresh_from_db()
+        assert fake_obj.cannot_change_me is True
 
     def test_freeze_works_with_fsm_transitions(
         self,
@@ -101,17 +109,11 @@ class TestBypassFreezeCheck:
     def test_bypass_fsm_freeze_input_list(self, active_fake_obj):
         active_fake_obj.cannot_change_me = True
 
-        with pytest.raises(FreezeValidationError):
-            active_fake_obj.save()
-
         with bypass_fsm_freeze([active_fake_obj]):
             active_fake_obj.save()  # no error raised
 
+        active_fake_obj.refresh_from_db()
         assert active_fake_obj.cannot_change_me is True
-        # make sure normal freeze check works
-        active_fake_obj.cannot_change_me = False
-        with pytest.raises(FreezeValidationError):
-            active_fake_obj.save()
 
     def test_bypass_fsm_freeze_on_save(self, active_fake_obj):
         active_fake_obj.cannot_change_me = True
@@ -121,11 +123,8 @@ class TestBypassFreezeCheck:
         with bypass_fsm_freeze(active_fake_obj):
             active_fake_obj.save()  # no error raised
 
+        active_fake_obj.refresh_from_db()
         assert active_fake_obj.cannot_change_me is True
-        # make sure normal freeze check works
-        active_fake_obj.cannot_change_me = False
-        with pytest.raises(FreezeValidationError):
-            active_fake_obj.save()
 
     def test_bypass_fsm_freeze_on_delete(self, active_fake_obj):
         with pytest.raises(FreezeValidationError):
