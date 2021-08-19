@@ -88,9 +88,9 @@ class TestFreezableFSMModelMixin:
         assert FakeModel2._get_fsm_field() is FakeModel2._meta.get_field(
             'status'
         )
-        FakeModel2.FSM_STATE_FIELD_NAME = 'not_a_field'
+        FakeModel2.FROZEN_STATE_LOOKUP_FIELD = 'not_a_field'
         with pytest.raises(FreezeValidationError) as err:
             FakeModel2.config_check()
         assert err.value == FreezeValidationError(
-            {'FSM_STATE_FIELD': 'FSMField not found.'}
+            {'FROZEN_STATE_LOOKUP_FIELD': 'FSMField not found.'}
         )

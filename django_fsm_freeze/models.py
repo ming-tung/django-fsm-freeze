@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import Optional
 
 from dirtyfields import DirtyFieldsMixin
 from django.core.exceptions import FieldDoesNotExist, ValidationError
@@ -18,16 +19,20 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
 
     FROZEN_IN_STATES: tuple = ()
     NON_FROZEN_FIELDS: tuple = ()
-    FSM_STATE_FIELD_NAME: str = 'state'
+    FROZEN_STATE_LOOKUP_FIELD: Optional[str]
 
-    def _is_fsm_frozen(self):
+    def is_fsm_frozen(self) -> bool:
+        """
+        Tells, wether or not, condition to apply frozen policy should be
+        applied.
+        """
         fsm_field = self.__class__._get_fsm_field()
         return fsm_field.value_from_object(self) in self.FROZEN_IN_STATES
 
     def freeze_check(self) -> None:
         errors = defaultdict(list)
         fsm_field = self.__class__._get_fsm_field()
-        if self._is_fsm_frozen():
+        if self.is_fsm_frozen():
             dirty_fields = self.get_dirty_fields(check_relationship=True)
             for field in set(dirty_fields) - set(
                 self.NON_FROZEN_FIELDS + (fsm_field.name,)
@@ -50,8 +55,14 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
         if len(fsm_fields) == 1:
             # Autodetected
             return fsm_fields[0]
+        if not hasattr(cls, 'FROZEN_STATE_LOOKUP_FIELD'):
+            raise TypeError(
+                'Ambiguity to find the frozen state lookup field.'
+                ' Please define FROZEN_STATE_LOOKUP_FIELD property'
+                f' on the class {cls!r}'
+            )
         for field in fsm_fields:
-            if field.name == cls.FSM_STATE_FIELD_NAME:
+            if field.name == cls.FROZEN_STATE_LOOKUP_FIELD:
                 return field
         raise FieldDoesNotExist
 
@@ -61,7 +72,7 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
         try:
             cls._get_fsm_field()
         except FieldDoesNotExist:
-            errors['FSM_STATE_FIELD'].append('FSMField not found.')
+            errors['FROZEN_STATE_LOOKUP_FIELD'].append('FSMField not found.')
 
         for field in cls.NON_FROZEN_FIELDS:
             try:
@@ -87,7 +98,7 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        if self._is_fsm_frozen():
+        if self.is_fsm_frozen():
             raise FreezeValidationError(
                 f'{self!r} is frozen, cannot be deleted.'
             )

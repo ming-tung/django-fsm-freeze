@@ -48,7 +48,7 @@ class FakeModel2(FreezableFSMModelMixin):
         FakeStates.ACTIVE.value,
         FakeStates.ARCHIVED.value,
     )
-    FSM_STATE_FIELD_NAME = 'status'
+    FROZEN_STATE_LOOKUP_FIELD = 'status'
     NON_FROZEN_FIELDS = ('can_change_me',)
 
     status = FSMField(default=FakeStates.NEW.value)
