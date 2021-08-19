@@ -1,7 +1,6 @@
 from collections import defaultdict
-from collections.abc import Iterable
 from contextlib import contextmanager
-from typing import Optional, Union
+from typing import Iterable, Optional, Union
 
 from dirtyfields import DirtyFieldsMixin
 from django.core.exceptions import FieldDoesNotExist, ValidationError
