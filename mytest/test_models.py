@@ -75,6 +75,22 @@ class TestFreezableFSMModelMixin:
             == f'{active_fake_obj!r} is frozen, cannot be deleted.'
         )
 
+    def test_can_call_transition(self, active_fake_obj):
+        """By default the state field is editable"""
+        active_fake_obj.archive()
+        active_fake_obj.save()
+
     def test_state_name_can_differ(self):
         fake_obj = FakeModel2.objects.create()
         assert fake_obj.status == 'new'
+
+    def test_fsm_state_field_name(self):
+        assert FakeModel2._get_fsm_field() is FakeModel2._meta.get_field(
+            'status'
+        )
+        FakeModel2.FSM_STATE_FIELD_NAME = 'not_a_field'
+        with pytest.raises(FreezeValidationError) as err:
+            FakeModel2.config_check()
+        assert err.value == FreezeValidationError(
+            {'FSM_STATE_FIELD': 'FSMField not found.'}
+        )

@@ -18,9 +18,7 @@ class FakeModel(FreezableFSMModelMixin):
         FakeStates.ACTIVE.value,
         FakeStates.ARCHIVED.value,
     )
-    NON_FROZEN_FIELDS = FreezableFSMModelMixin.NON_FROZEN_FIELDS + (
-        'can_change_me',
-    )
+    NON_FROZEN_FIELDS = ('can_change_me',)
 
     state = FSMField(default=FakeStates.NEW.value)
 
@@ -51,9 +49,10 @@ class FakeModel2(FreezableFSMModelMixin):
         FakeStates.ARCHIVED.value,
     )
     FSM_STATE_FIELD_NAME = 'status'
-    NON_FROZEN_FIELDS = (FSM_STATE_FIELD_NAME, 'can_change_me')
+    NON_FROZEN_FIELDS = ('can_change_me',)
 
     status = FSMField(default=FakeStates.NEW.value)
+    another_status = FSMField(default=FakeStates.NEW.value)
 
     cannot_change_me = models.BooleanField(default=False)
     can_change_me = models.BooleanField(default=False)
