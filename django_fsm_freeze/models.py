@@ -26,13 +26,17 @@ class FreezeConfigurationError(ValidationError):
 def bypass_fsm_freeze(objs: Union[object, Iterable]):
     if not isinstance(objs, Iterable):
         objs = (objs,)
+    errors = list()
     for obj in objs:
         if not isinstance(obj, FreezableFSMModelMixin):
-            raise FreezeConfigurationError(
-                f'Unsupported argument {obj!r}. '
+            errors.append(
+                f'Unsupported argument(s): {obj!r}. '
                 f'`bypass_fsm_freeze()` accepts instance(s) from '
                 f'FreezableFSMModelMixin.'
             )
+    if errors:
+        raise FreezeConfigurationError(errors)
+
     try:
         for obj in objs:
             obj._bypass_fsm_freeze = True

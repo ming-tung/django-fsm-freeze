@@ -115,7 +115,7 @@ class TestBypassFreezeCheck:
     def test_bypass_fsm_freeze_input_list(self, active_fake_obj):
         active_fake_obj.cannot_change_me = True
 
-        with bypass_fsm_freeze([active_fake_obj]):
+        with bypass_fsm_freeze((active_fake_obj,)):
             active_fake_obj.save()  # no error raised
 
         active_fake_obj.refresh_from_db()
@@ -141,13 +141,19 @@ class TestBypassFreezeCheck:
 
     def test_bypass_fsm_freeze_input_not_a_freezable_obj(self):
         not_a_freezable_obj = object()
+        input_objs = [not_a_freezable_obj, 'some-str']
 
         with pytest.raises(FreezeConfigurationError) as err:
-            with bypass_fsm_freeze(not_a_freezable_obj):
+            with bypass_fsm_freeze(input_objs):
                 pass
 
-        assert err.value == FreezeConfigurationError(
-            f'Unsupported argument {not_a_freezable_obj!r}. '
+        assert err.value.error_list[0] == FreezeConfigurationError(
+            f'Unsupported argument(s): {not_a_freezable_obj!r}. '
             f'`bypass_fsm_freeze()` accepts instance(s) from '
             f'FreezableFSMModelMixin.'
+        )
+        assert err.value.error_list[1] == FreezeConfigurationError(
+            "Unsupported argument(s): 'some-str'. "
+            '`bypass_fsm_freeze()` accepts instance(s) from '
+            'FreezableFSMModelMixin.'
         )
