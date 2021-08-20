@@ -1,6 +1,10 @@
 import pytest
 
-from django_fsm_freeze.models import FreezeValidationError, bypass_fsm_freeze
+from django_fsm_freeze.exceptions import (
+    FreezeConfigurationError,
+    FreezeValidationError,
+)
+from django_fsm_freeze.models import bypass_fsm_freeze
 from mytest.models import FakeModel, FakeModel2
 
 
@@ -97,9 +101,11 @@ class TestFreezableFSMModelMixin:
             'status'
         )
         FakeModel2.FROZEN_STATE_LOOKUP_FIELD = 'not_a_field'
-        with pytest.raises(FreezeValidationError) as err:
+
+        with pytest.raises(FreezeConfigurationError) as err:
             FakeModel2.config_check()
-        assert err.value == FreezeValidationError(
+
+        assert err.value == FreezeConfigurationError(
             {'FROZEN_STATE_LOOKUP_FIELD': 'FSMField not found.'}
         )
 
@@ -109,7 +115,7 @@ class TestBypassFreezeCheck:
     def test_bypass_fsm_freeze_input_list(self, active_fake_obj):
         active_fake_obj.cannot_change_me = True
 
-        with bypass_fsm_freeze([active_fake_obj]):
+        with bypass_fsm_freeze((active_fake_obj,)):
             active_fake_obj.save()  # no error raised
 
         active_fake_obj.refresh_from_db()
@@ -135,13 +141,19 @@ class TestBypassFreezeCheck:
 
     def test_bypass_fsm_freeze_input_not_a_freezable_obj(self):
         not_a_freezable_obj = object()
+        input_objs = [not_a_freezable_obj, 'some-str']
 
-        with pytest.raises(FreezeValidationError) as err:
-            with bypass_fsm_freeze(not_a_freezable_obj):
+        with pytest.raises(FreezeConfigurationError) as err:
+            with bypass_fsm_freeze(input_objs):
                 pass
 
-        assert err.value == FreezeValidationError(
-            f'Unsupported argument {not_a_freezable_obj!r}. '
+        assert err.value.error_list[0] == FreezeConfigurationError(
+            f'Unsupported argument(s): {not_a_freezable_obj!r}. '
             f'`bypass_fsm_freeze()` accepts instance(s) from '
             f'FreezableFSMModelMixin.'
+        )
+        assert err.value.error_list[1] == FreezeConfigurationError(
+            "Unsupported argument(s): 'some-str'. "
+            '`bypass_fsm_freeze()` accepts instance(s) from '
+            'FreezableFSMModelMixin.'
         )

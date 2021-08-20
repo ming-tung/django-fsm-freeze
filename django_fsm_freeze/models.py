@@ -3,28 +3,33 @@ from contextlib import contextmanager
 from typing import Iterable, Optional, Union
 
 from dirtyfields import DirtyFieldsMixin
-from django.core.exceptions import FieldDoesNotExist, ValidationError
+from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 from django.db.models.signals import class_prepared
 from django.dispatch import receiver
 from django_fsm import FSMField
 
-
-class FreezeValidationError(ValidationError):
-    pass
+from django_fsm_freeze.exceptions import (
+    FreezeConfigurationError,
+    FreezeValidationError,
+)
 
 
 @contextmanager
 def bypass_fsm_freeze(objs: Union[object, Iterable]):
     if not isinstance(objs, Iterable):
         objs = (objs,)
+    errors = list()
     for obj in objs:
         if not isinstance(obj, FreezableFSMModelMixin):
-            raise FreezeValidationError(
-                f'Unsupported argument {obj!r}. '
+            errors.append(
+                f'Unsupported argument(s): {obj!r}. '
                 f'`bypass_fsm_freeze()` accepts instance(s) from '
                 f'FreezableFSMModelMixin.'
             )
+    if errors:
+        raise FreezeConfigurationError(errors)
+
     try:
         for obj in objs:
             obj._bypass_fsm_freeze = True
@@ -103,7 +108,7 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
             except FieldDoesNotExist:
                 errors[field].append(f'{field!r} field does not exist.')
         if errors:
-            raise FreezeValidationError(errors)
+            raise FreezeConfigurationError(errors)
 
     def save(self, *args, **kwargs) -> None:
         """Data freeze checking before saving the object."""
