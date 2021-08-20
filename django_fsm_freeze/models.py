@@ -11,6 +11,14 @@ from django_fsm import FSMField
 
 
 class FreezeValidationError(ValidationError):
+    """Data and field validation-related error."""
+
+    pass
+
+
+class FreezeConfigurationError(ValidationError):
+    """Configuration-related error."""
+
     pass
 
 
@@ -20,7 +28,7 @@ def bypass_fsm_freeze(objs: Union[object, Iterable]):
         objs = (objs,)
     for obj in objs:
         if not isinstance(obj, FreezableFSMModelMixin):
-            raise FreezeValidationError(
+            raise FreezeConfigurationError(
                 f'Unsupported argument {obj!r}. '
                 f'`bypass_fsm_freeze()` accepts instance(s) from '
                 f'FreezableFSMModelMixin.'
@@ -103,7 +111,7 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
             except FieldDoesNotExist:
                 errors[field].append(f'{field!r} field does not exist.')
         if errors:
-            raise FreezeValidationError(errors)
+            raise FreezeConfigurationError(errors)
 
     def save(self, *args, **kwargs) -> None:
         """Data freeze checking before saving the object."""

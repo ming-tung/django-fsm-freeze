@@ -1,6 +1,10 @@
 import pytest
 
-from django_fsm_freeze.models import FreezeValidationError, bypass_fsm_freeze
+from django_fsm_freeze.models import (
+    FreezeConfigurationError,
+    FreezeValidationError,
+    bypass_fsm_freeze,
+)
 from mytest.models import FakeModel, FakeModel2
 
 
@@ -97,9 +101,11 @@ class TestFreezableFSMModelMixin:
             'status'
         )
         FakeModel2.FROZEN_STATE_LOOKUP_FIELD = 'not_a_field'
-        with pytest.raises(FreezeValidationError) as err:
+
+        with pytest.raises(FreezeConfigurationError) as err:
             FakeModel2.config_check()
-        assert err.value == FreezeValidationError(
+
+        assert err.value == FreezeConfigurationError(
             {'FROZEN_STATE_LOOKUP_FIELD': 'FSMField not found.'}
         )
 
@@ -136,11 +142,11 @@ class TestBypassFreezeCheck:
     def test_bypass_fsm_freeze_input_not_a_freezable_obj(self):
         not_a_freezable_obj = object()
 
-        with pytest.raises(FreezeValidationError) as err:
+        with pytest.raises(FreezeConfigurationError) as err:
             with bypass_fsm_freeze(not_a_freezable_obj):
                 pass
 
-        assert err.value == FreezeValidationError(
+        assert err.value == FreezeConfigurationError(
             f'Unsupported argument {not_a_freezable_obj!r}. '
             f'`bypass_fsm_freeze()` accepts instance(s) from '
             f'FreezableFSMModelMixin.'
