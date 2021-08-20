@@ -3,23 +3,16 @@ from contextlib import contextmanager
 from typing import Iterable, Optional, Union
 
 from dirtyfields import DirtyFieldsMixin
-from django.core.exceptions import FieldDoesNotExist, ValidationError
+from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 from django.db.models.signals import class_prepared
 from django.dispatch import receiver
 from django_fsm import FSMField
 
-
-class FreezeValidationError(ValidationError):
-    """Data and field validation-related error."""
-
-    pass
-
-
-class FreezeConfigurationError(ValidationError):
-    """Configuration-related error."""
-
-    pass
+from django_fsm_freeze.exceptions import (
+    FreezeConfigurationError,
+    FreezeValidationError,
+)
 
 
 @contextmanager

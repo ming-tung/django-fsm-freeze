@@ -1,10 +1,10 @@
 import pytest
 
-from django_fsm_freeze.models import (
+from django_fsm_freeze.exceptions import (
     FreezeConfigurationError,
     FreezeValidationError,
-    bypass_fsm_freeze,
 )
+from django_fsm_freeze.models import bypass_fsm_freeze
 from mytest.models import FakeModel, FakeModel2
 
 
