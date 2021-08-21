@@ -71,10 +71,11 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
 
     @classmethod
     def _get_fsm_field(cls) -> models.Field:
+        """Discover the FSMField.
+
+        If multiples are found, we use FROZEN_STATE_LOOKUP_FIELD to select it.
         """
-        Autodiscover the FSMField. If multiples are found, then we rely on
-        the FSM_STATE_FIELD_NAME property to select it.
-        """
+
         fsm_fields = [
             field for field in cls._meta.fields if isinstance(field, FSMField)
         ]
@@ -86,7 +87,7 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
         if not hasattr(cls, 'FROZEN_STATE_LOOKUP_FIELD'):
             raise TypeError(
                 'Ambiguity to find the frozen state lookup field.'
-                ' Please define FROZEN_STATE_LOOKUP_FIELD property'
+                ' Please define FROZEN_STATE_LOOKUP_FIELD attribute'
                 f' on the class {cls!r}'
             )
         for field in fsm_fields:
@@ -101,6 +102,8 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
             cls._get_fsm_field()
         except FieldDoesNotExist:
             errors['FROZEN_STATE_LOOKUP_FIELD'].append('FSMField not found.')
+        except TypeError as err:
+            errors['FROZEN_STATE_LOOKUP_FIELD'].append(str(err))
 
         for field in cls.NON_FROZEN_FIELDS:
             try:

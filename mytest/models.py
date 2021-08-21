@@ -43,6 +43,7 @@ class FakeModel(FreezableFSMModelMixin):
 
 
 class FakeModel2(FreezableFSMModelMixin):
+    """Have two FSMFields, and define one as FROZEN_STATE_LOOKUP_FIELD."""
 
     FROZEN_IN_STATES = (
         FakeStates.ACTIVE.value,

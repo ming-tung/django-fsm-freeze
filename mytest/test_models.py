@@ -87,8 +87,12 @@ class TestFreezableFSMModelMixin:
             == f'{active_fake_obj!r} is frozen, cannot be deleted.'
         )
 
-    def test_can_call_transition(self, active_fake_obj):
-        """By default the state field is editable"""
+    @pytest.mark.parametrize('mymodel', [FakeModel, FakeModel2])
+    def test_can_call_transition(self, mymodel):
+        """By default, 'state' FSMField is editable."""
+
+        active_fake_obj = mymodel.objects.create()
+        active_fake_obj.activate()
         active_fake_obj.archive()
         active_fake_obj.save()
 
@@ -96,7 +100,7 @@ class TestFreezableFSMModelMixin:
         fake_obj = FakeModel2.objects.create()
         assert fake_obj.status == 'new'
 
-    def test_fsm_state_field_name(self):
+    def test_fsm_state_field_name_is_not_a_fsmfield(self):
         assert FakeModel2._get_fsm_field() is FakeModel2._meta.get_field(
             'status'
         )
@@ -107,6 +111,23 @@ class TestFreezableFSMModelMixin:
 
         assert err.value == FreezeConfigurationError(
             {'FROZEN_STATE_LOOKUP_FIELD': 'FSMField not found.'}
+        )
+
+    def test_fsm_state_field_name_should_be_specified(self):
+        """Require FROZEN_STATE_LOOKUP_FIELD when multiple `FSMField`s found"""
+
+        delattr(FakeModel2, 'FROZEN_STATE_LOOKUP_FIELD')
+
+        with pytest.raises(FreezeConfigurationError) as err:
+            FakeModel2.config_check()
+
+        assert err.value == FreezeConfigurationError(
+            {
+                'FROZEN_STATE_LOOKUP_FIELD': f'Ambiguity to find the'
+                f' frozen state lookup field. Please define'
+                f' FROZEN_STATE_LOOKUP_FIELD attribute on the class'
+                f' {FakeModel2!r}'
+            }
         )
 
 

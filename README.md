@@ -21,14 +21,12 @@ pip install django-fsm-freeze
 - (optional) Customize the `NON_FROZEN_FIELDS` for mutability
 
 When an object is in a frozen state, by default all of its fields are immutable,
-except for the `state` field which needs to be mutable for
+except for the `state` FSMField which needs to be mutable for
 [django-fsm](https://github.com/viewflow/django-fsm) to work.
+This can be customized via the `FROZEN_STATE_LOOKUP_FIELD` attribute which defaults to 'state'.
 
 In case we still want to mutate certain fields when the object is frozen, we can override
 the `NON_FROZEN_FIELDS` to allow it.
-When overriding the `NON_FROZEN_FIELDS`, be careful to include `state` for the reason
-mentioned above.
-
 
 ```python
 from django.db import models
@@ -41,9 +39,7 @@ class MyDjangoFSMModel(FreezableFSMModelMixin):
     # In this example, when object is in the 'active' state, it is immutable.
     FROZEN_IN_STATES = ('active', )
 
-    NON_FROZEN_FIELDS = FreezableFSMModelMixin.NON_FROZEN_FIELDS + (
-        'a_mutable_field',
-    )
+    NON_FROZEN_FIELDS = ('a_mutable_field', )
 
     # Assign this with the name of the `FSMField` if your models has multiple FSMFields.
     # See example in `mytest/models.py:FakeModel2`
@@ -75,32 +71,12 @@ If you want to bypass the frozen check for some reason, you can use the contextm
 checking on `.save()` and `.delete()`.
 You can find some usage example in test `mytest/test_models.py:TestBypassFreezeCheck`.
 
-# Development
-This is for contributors or developers of the project.
-The usual stuff :)
+## Developing
+For contributors or developers of the project, please see [DEVELOPING.md](docs/DEVELOPING.md)
 
-- First, install the package then try to run tests.
-  ```bash
-  # install dependencies from lock file
-  poetry install
+## Contributing 
+(TODO)
+For anyone who is interested in contributing to this project, please see [CONTRIBUTING.md](docs/CONTRIBUTING.md).
+Thank you :)
 
-  # run checks and tests
-  poetry run flake8 .
-  poetry run isort .
-  poetry run pytest
-  ```
-
-- Whether working on a feature or a bug fix, write meaningful test(s) that fail.
-- Work on the code change
-- Pass the test(s)
-- Review your own work
-- When you are happy, open a Pull Request and ask for review :)
-
-## Make a Release
-For the owner and contributors, when the time comes, we use github Release (and Actions)
-to publish the package to PyPI.
-
-- In the Release page, start by "Draft a new release"
-- We use semantic versioning and prefix with the letter "v", e.g. "v0.1.7"
-- Choose the target branch (usually `main`) and write a meaningful Release title and description
-- Click on "Publish release" to trigger the CI to automatically publish the package to PyPI
+For further discussions or suggestions, you could also reach out to me on twitter or email.
