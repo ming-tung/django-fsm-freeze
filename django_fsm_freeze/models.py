@@ -49,23 +49,28 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
 
     _bypass_fsm_freeze: bool = False
 
+    @property
     def is_fsm_frozen(self) -> bool:
-        """
-        Tells, wether or not, condition to apply frozen policy should be
-        applied.
-        """
+        """Determine whether self is frozen or not."""
+
         fsm_field = self.__class__._get_fsm_field()
         return fsm_field.value_from_object(self) in self.FROZEN_IN_STATES
 
     def freeze_check(self) -> None:
+        """Check dirty fields and frozen status.
+
+        Raise `FreezeValidationError` if it is dirty and frozen.
+        """
+
+        if self._bypass_fsm_freeze or not self.is_fsm_frozen:
+            return
         errors = defaultdict(list)
         fsm_field = self.__class__._get_fsm_field()
-        if self.is_fsm_frozen():
-            dirty_fields = self.get_dirty_fields(check_relationship=True)
-            for field in set(dirty_fields) - set(
-                self.NON_FROZEN_FIELDS + (fsm_field.name,)
-            ):
-                errors[field].append('Cannot change frozen field.')
+        dirty_fields = self.get_dirty_fields(check_relationship=True)
+        for field in set(dirty_fields) - set(
+            self.NON_FROZEN_FIELDS + (fsm_field.name,)
+        ):
+            errors[field].append('Cannot change frozen field.')
         if errors:
             raise FreezeValidationError(errors)
 
@@ -113,16 +118,14 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
     def save(self, *args, **kwargs) -> None:
         """Data freeze checking before saving the object."""
 
-        if not self._bypass_fsm_freeze:
-            if kwargs.get('force_insert', None):
-                # e.g. object creation
-                pass
-            else:
-                self.freeze_check()
+        if not kwargs.get('force_insert', None):
+            # e.g. not object creation
+            self.freeze_check()
+
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        if not self._bypass_fsm_freeze and self.is_fsm_frozen():
+        if not self._bypass_fsm_freeze and self.is_fsm_frozen:
             raise FreezeValidationError(
                 f'{self!r} is frozen, cannot be deleted.'
             )
