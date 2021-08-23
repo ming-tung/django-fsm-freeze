@@ -17,7 +17,9 @@ from django_fsm_freeze.exceptions import (
 
 @contextmanager
 def bypass_fsm_freeze(
-    objs: Union[object, Iterable] = (),
+    objs: Union[
+        'FreezableFSMModelMixin', Iterable['FreezableFSMModelMixin']
+    ] = (),
 ):
     if use_local_bypass := bool(objs):
         if not isinstance(objs, Iterable):
