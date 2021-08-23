@@ -35,13 +35,13 @@ def bypass_fsm_freeze(
 
     try:
         if bypass_globally is True:
-            setattr(FreezableFSMModelMixin, '_DISABLED_FSM_FREEZE', True)
+            FreezableFSMModelMixin._DISABLED_FSM_FREEZE = True
         for obj in objs:
             obj._bypass_fsm_freeze = True
         yield
     finally:
         if bypass_globally is True:
-            setattr(FreezableFSMModelMixin, '_DISABLED_FSM_FREEZE', False)
+            FreezableFSMModelMixin._DISABLED_FSM_FREEZE = False
         for obj in objs:
             obj._bypass_fsm_freeze = False
 
