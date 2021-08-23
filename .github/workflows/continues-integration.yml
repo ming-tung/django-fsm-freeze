@@ -48,7 +48,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           poetry run pip install coveralls
-          poetry run python -m coveralls
+          poetry run python -m coveralls --service=github
 
   deploy:
     name: Build and Publish on release
