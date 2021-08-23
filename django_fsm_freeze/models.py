@@ -18,10 +18,12 @@ from django_fsm_freeze.exceptions import (
 @contextmanager
 def bypass_fsm_freeze(
     objs: Union[object, Iterable] = (),
-    bypass_globally: bool = False,
 ):
-    if objs and not isinstance(objs, Iterable):
-        objs = (objs,)
+    if use_local_bypass := bool(objs):
+        if not isinstance(objs, Iterable):
+            objs = (objs,)
+    else:
+        objs = ()
     errors = []
     for obj in objs:
         if not isinstance(obj, FreezableFSMModelMixin):
@@ -34,13 +36,13 @@ def bypass_fsm_freeze(
         raise FreezeConfigurationError(errors)
 
     try:
-        if bypass_globally is True:
+        if not use_local_bypass:
             FreezableFSMModelMixin._DISABLED_FSM_FREEZE = True
         for obj in objs:
             obj._bypass_fsm_freeze = True
         yield
     finally:
-        if bypass_globally is True:
+        if not use_local_bypass:
             FreezableFSMModelMixin._DISABLED_FSM_FREEZE = False
         for obj in objs:
             obj._bypass_fsm_freeze = False
