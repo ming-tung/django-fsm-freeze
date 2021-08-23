@@ -1,3 +1,4 @@
+import threading
 from collections import defaultdict
 from contextlib import contextmanager
 from typing import Iterable, Optional, Union
@@ -13,6 +14,8 @@ from django_fsm_freeze.exceptions import (
     FreezeConfigurationError,
     FreezeValidationError,
 )
+
+_DISABLED_FSM_FREEZE = threading.local()
 
 
 @contextmanager
@@ -39,13 +42,13 @@ def bypass_fsm_freeze(
 
     try:
         if not use_local_bypass:
-            FreezableFSMModelMixin._DISABLED_FSM_FREEZE = True
+            _DISABLED_FSM_FREEZE.active = True
         for obj in objs:
             obj._bypass_fsm_freeze = True
         yield
     finally:
         if not use_local_bypass:
-            FreezableFSMModelMixin._DISABLED_FSM_FREEZE = False
+            _DISABLED_FSM_FREEZE.active = False
         for obj in objs:
             obj._bypass_fsm_freeze = False
 
@@ -57,7 +60,6 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
     FROZEN_IN_STATES: tuple = ()
     NON_FROZEN_FIELDS: tuple = ()
     FROZEN_STATE_LOOKUP_FIELD: Optional[str]
-    _DISABLED_FSM_FREEZE: bool = False
 
     _bypass_fsm_freeze: bool = False
 
@@ -70,7 +72,10 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
 
     @property
     def _is_fsm_freeze_bypassed(self) -> bool:
-        return bool(self._DISABLED_FSM_FREEZE or self._bypass_fsm_freeze)
+        return bool(
+            getattr(_DISABLED_FSM_FREEZE, 'active', False)
+            or self._bypass_fsm_freeze
+        )
 
     def freeze_check(self) -> None:
         """Check dirty fields and frozen status.
