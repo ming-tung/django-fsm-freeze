@@ -15,6 +15,13 @@ def active_fake_obj():
     return fake_obj
 
 
+@pytest.fixture
+def active_fake2_obj():
+    fake_obj = FakeModel2.objects.create()
+    fake_obj.activate()
+    return fake_obj
+
+
 @pytest.mark.django_db
 class TestFreezableFSMModelMixin:
     def test_fields_are_frozen_when_in_frozen_state(self):
@@ -133,6 +140,16 @@ class TestFreezableFSMModelMixin:
 
 @pytest.mark.django_db
 class TestBypassFreezeCheck:
+    def test_bypass_fsm_freeze_empty(self, active_fake_obj):
+        active_fake_obj.cannot_change_me = True
+
+        with pytest.raises(FreezeValidationError):
+            with bypass_fsm_freeze():  # empty input, i.e. nothing bypassed
+                active_fake_obj.save()
+
+        active_fake_obj.refresh_from_db()
+        assert active_fake_obj.cannot_change_me is False
+
     def test_bypass_fsm_freeze_input_list(self, active_fake_obj):
         active_fake_obj.cannot_change_me = True
 
@@ -178,3 +195,49 @@ class TestBypassFreezeCheck:
             '`bypass_fsm_freeze()` accepts instance(s) from '
             'FreezableFSMModelMixin.'
         )
+
+    def test_bypass_fsm_freeze_globally(
+        self, active_fake_obj, active_fake2_obj
+    ):
+        active_fake_obj.cannot_change_me = True
+        active_fake2_obj.cannot_change_me = True
+
+        with bypass_fsm_freeze(bypass_globally=True):
+            active_fake_obj.save()
+            active_fake2_obj.save()
+
+        active_fake_obj.refresh_from_db()
+        active_fake2_obj.refresh_from_db()
+        assert active_fake_obj.cannot_change_me is True
+        assert active_fake2_obj.cannot_change_me is True
+
+        with bypass_fsm_freeze(bypass_globally=True):
+            active_fake_obj.delete()
+            active_fake2_obj.delete()
+
+        assert FakeModel.objects.count() == 0
+
+    def test_bypass_input_objs_and_global(
+        self, active_fake_obj, active_fake2_obj
+    ):
+        active_fake_obj.cannot_change_me = True
+        active_fake2_obj.cannot_change_me = True
+
+        with bypass_fsm_freeze((active_fake_obj,), bypass_globally=True):
+            active_fake_obj.save()
+            active_fake2_obj.save()
+
+        active_fake_obj.refresh_from_db()
+        active_fake2_obj.refresh_from_db()
+        assert active_fake_obj.cannot_change_me is True
+        assert active_fake2_obj.cannot_change_me is True
+
+        with bypass_fsm_freeze(
+            bypass_globally=True,
+            objs=(active_fake_obj,),
+        ):
+            active_fake_obj.delete()
+            active_fake2_obj.delete()
+
+        assert FakeModel.objects.count() == 0
+        assert FakeModel2.objects.count() == 0

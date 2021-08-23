@@ -16,8 +16,11 @@ from django_fsm_freeze.exceptions import (
 
 
 @contextmanager
-def bypass_fsm_freeze(objs: Union[object, Iterable]):
-    if not isinstance(objs, Iterable):
+def bypass_fsm_freeze(
+    objs: Union[object, Iterable] = (),
+    bypass_globally: bool = False,
+):
+    if objs and not isinstance(objs, Iterable):
         objs = (objs,)
     errors = list()
     for obj in objs:
@@ -31,10 +34,14 @@ def bypass_fsm_freeze(objs: Union[object, Iterable]):
         raise FreezeConfigurationError(errors)
 
     try:
+        if bypass_globally is True:
+            setattr(FreezableFSMModelMixin, '_DISABLED_FSM_FREEZE', True)
         for obj in objs:
             obj._bypass_fsm_freeze = True
         yield
     finally:
+        if bypass_globally is True:
+            setattr(FreezableFSMModelMixin, '_DISABLED_FSM_FREEZE', False)
         for obj in objs:
             obj._bypass_fsm_freeze = False
 
@@ -46,6 +53,7 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
     FROZEN_IN_STATES: tuple = ()
     NON_FROZEN_FIELDS: tuple = ()
     FROZEN_STATE_LOOKUP_FIELD: Optional[str]
+    _DISABLED_FSM_FREEZE: bool = False
 
     _bypass_fsm_freeze: bool = False
 
@@ -56,13 +64,17 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
         fsm_field = self.__class__._get_fsm_field()
         return fsm_field.value_from_object(self) in self.FROZEN_IN_STATES
 
+    @property
+    def _is_fsm_freeze_bypassed(self) -> bool:
+        return bool(self._DISABLED_FSM_FREEZE or self._bypass_fsm_freeze)
+
     def freeze_check(self) -> None:
         """Check dirty fields and frozen status.
 
         Raise `FreezeValidationError` if it is dirty and frozen.
         """
 
-        if self._bypass_fsm_freeze or not self.is_fsm_frozen:
+        if self._is_fsm_freeze_bypassed or not self.is_fsm_frozen:
             return
         errors = defaultdict(list)
         fsm_field = self.__class__._get_fsm_field()
@@ -128,7 +140,7 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        if not self._bypass_fsm_freeze and self.is_fsm_frozen:
+        if not self._is_fsm_freeze_bypassed and self.is_fsm_frozen:
             raise FreezeValidationError(
                 f'{self!r} is frozen, cannot be deleted.'
             )
