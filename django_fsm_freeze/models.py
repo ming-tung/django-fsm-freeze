@@ -22,7 +22,7 @@ def bypass_fsm_freeze(
 ):
     if objs and not isinstance(objs, Iterable):
         objs = (objs,)
-    errors = list()
+    errors = []
     for obj in objs:
         if not isinstance(obj, FreezableFSMModelMixin):
             errors.append(
