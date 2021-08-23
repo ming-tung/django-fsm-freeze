@@ -12,6 +12,7 @@ from mytest.models import FakeModel, FakeModel2
 def active_fake_obj():
     fake_obj = FakeModel.objects.create()
     fake_obj.activate()
+    fake_obj.save()
     return fake_obj
 
 
@@ -19,6 +20,7 @@ def active_fake_obj():
 def active_fake2_obj():
     fake_obj = FakeModel2.objects.create()
     fake_obj.activate()
+    fake_obj.save()
     return fake_obj
 
 
@@ -111,31 +113,40 @@ class TestFreezableFSMModelMixin:
         assert FakeModel2._get_fsm_field() is FakeModel2._meta.get_field(
             'status'
         )
-        FakeModel2.FROZEN_STATE_LOOKUP_FIELD = 'not_a_field'
 
-        with pytest.raises(FreezeConfigurationError) as err:
-            FakeModel2.config_check()
+        previous_value = FakeModel2.FROZEN_STATE_LOOKUP_FIELD
+        try:
+            FakeModel2.FROZEN_STATE_LOOKUP_FIELD = 'not_a_field'
 
-        assert err.value == FreezeConfigurationError(
-            {'FROZEN_STATE_LOOKUP_FIELD': 'FSMField not found.'}
-        )
+            with pytest.raises(FreezeConfigurationError) as err:
+                FakeModel2.config_check()
+
+            assert err.value == FreezeConfigurationError(
+                {'FROZEN_STATE_LOOKUP_FIELD': 'FSMField not found.'}
+            )
+        finally:
+            FakeModel2.FROZEN_STATE_LOOKUP_FIELD = previous_value
 
     def test_fsm_state_field_name_should_be_specified(self):
         """Require FROZEN_STATE_LOOKUP_FIELD when multiple `FSMField`s found"""
 
-        delattr(FakeModel2, 'FROZEN_STATE_LOOKUP_FIELD')
+        previous_value = FakeModel2.FROZEN_STATE_LOOKUP_FIELD
+        try:
+            del FakeModel2.FROZEN_STATE_LOOKUP_FIELD
 
-        with pytest.raises(FreezeConfigurationError) as err:
-            FakeModel2.config_check()
+            with pytest.raises(FreezeConfigurationError) as err:
+                FakeModel2.config_check()
 
-        assert err.value == FreezeConfigurationError(
-            {
-                'FROZEN_STATE_LOOKUP_FIELD': f'Ambiguity to find the'
-                f' frozen state lookup field. Please define'
-                f' FROZEN_STATE_LOOKUP_FIELD attribute on the class'
-                f' {FakeModel2!r}'
-            }
-        )
+            assert err.value == FreezeConfigurationError(
+                {
+                    'FROZEN_STATE_LOOKUP_FIELD': f'Ambiguity to find the'
+                    f' frozen state lookup field. Please define'
+                    f' FROZEN_STATE_LOOKUP_FIELD attribute on the class'
+                    f' {FakeModel2!r}'
+                }
+            )
+        finally:
+            FakeModel2.FROZEN_STATE_LOOKUP_FIELD = previous_value
 
 
 @pytest.mark.django_db
@@ -143,12 +154,11 @@ class TestBypassFreezeCheck:
     def test_bypass_fsm_freeze_empty(self, active_fake_obj):
         active_fake_obj.cannot_change_me = True
 
-        with pytest.raises(FreezeValidationError):
-            with bypass_fsm_freeze():  # empty input, i.e. nothing bypassed
-                active_fake_obj.save()
+        with bypass_fsm_freeze():  # empty input, i.e. globally bypassed
+            active_fake_obj.save()
 
         active_fake_obj.refresh_from_db()
-        assert active_fake_obj.cannot_change_me is False
+        assert active_fake_obj.cannot_change_me is True
 
     def test_bypass_fsm_freeze_input_list(self, active_fake_obj):
         active_fake_obj.cannot_change_me = True
@@ -202,7 +212,7 @@ class TestBypassFreezeCheck:
         active_fake_obj.cannot_change_me = True
         active_fake2_obj.cannot_change_me = True
 
-        with bypass_fsm_freeze(bypass_globally=True):
+        with bypass_fsm_freeze():
             active_fake_obj.save()
             active_fake2_obj.save()
 
@@ -211,7 +221,7 @@ class TestBypassFreezeCheck:
         assert active_fake_obj.cannot_change_me is True
         assert active_fake2_obj.cannot_change_me is True
 
-        with bypass_fsm_freeze(bypass_globally=True):
+        with bypass_fsm_freeze():
             active_fake_obj.delete()
             active_fake2_obj.delete()
 
@@ -223,21 +233,20 @@ class TestBypassFreezeCheck:
         active_fake_obj.cannot_change_me = True
         active_fake2_obj.cannot_change_me = True
 
-        with bypass_fsm_freeze((active_fake_obj,), bypass_globally=True):
-            active_fake_obj.save()
-            active_fake2_obj.save()
+        with pytest.raises(FreezeValidationError):
+            with bypass_fsm_freeze(active_fake_obj):
+                active_fake_obj.save()
+                active_fake2_obj.save()
 
         active_fake_obj.refresh_from_db()
         active_fake2_obj.refresh_from_db()
         assert active_fake_obj.cannot_change_me is True
-        assert active_fake2_obj.cannot_change_me is True
+        assert active_fake2_obj.cannot_change_me is False
 
-        with bypass_fsm_freeze(
-            bypass_globally=True,
-            objs=(active_fake_obj,),
-        ):
-            active_fake_obj.delete()
-            active_fake2_obj.delete()
+        with pytest.raises(FreezeValidationError):
+            with bypass_fsm_freeze(active_fake_obj):
+                active_fake_obj.delete()
+                active_fake2_obj.delete()
 
         assert FakeModel.objects.count() == 0
-        assert FakeModel2.objects.count() == 0
+        assert FakeModel2.objects.count() == 1
