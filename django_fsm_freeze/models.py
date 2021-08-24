@@ -25,6 +25,13 @@ def bypass_fsm_freeze(
     ] = (),
     bypass_globally: bool = False,
 ):
+    """
+    Bypass the frozen checks.
+
+    objs: the object(s) that will not be checked for its frozeness
+    bypass_globally: flag to apply the bypassing globally
+    """
+
     if objs and not isinstance(objs, Iterable):
         objs = (objs,)
     errors = []
@@ -61,13 +68,24 @@ def resolve_dotted_path(instance: Any, path: str) -> Any:
 
 
 class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
+    """
+    Support for django-fsm data immutability.
+
+    FROZEN_IN_STATES: fsm states that an instance is considered frozen in
+    FROZEN_STATE_LOOKUP_FIELD: the field used to be looked up for the state
+    FROZEN_DELEGATE_TO: the field used to be looked up for the state (via
+                        foreignkey, dot-separated path).
+                        Cannot be combined with `FROZEN_STATE_LOOKUP_FIELD`.
+    NON_FROZEN_FIELDS: fields that are mutable
+    """
+
     class Meta:
         abstract = True
 
     FROZEN_IN_STATES: tuple = ()
-    NON_FROZEN_FIELDS: tuple = ()
     FROZEN_STATE_LOOKUP_FIELD: Optional[str]
     FROZEN_DELEGATE_TO: Optional[str] = None
+    NON_FROZEN_FIELDS: tuple = ()
 
     _bypass_fsm_freeze: bool = False
 

@@ -15,18 +15,39 @@ pip install django-fsm-freeze
 
 ## Configuration
 
+### Basic configuration
 - Add `FreezableFSMModelMixin` to your [django-fsm](https://github.com/viewflow/django-fsm) model
 - Specify the `FROZEN_IN_STATES` in which the object should be frozen, meaning the
   value of its fields/attributes cannot be changed.
-- (optional) Customize the `NON_FROZEN_FIELDS` for mutability
+- (optional) Customize the `NON_FROZEN_FIELDS` for partial mutability
 
 When an object is in a frozen state, by default all of its fields are immutable,
 except for the `state` FSMField which needs to be mutable for
 [django-fsm](https://github.com/viewflow/django-fsm) to work.
-This can be customized via the `FROZEN_STATE_LOOKUP_FIELD` attribute which defaults to 'state'.
 
-In case we still want to mutate certain fields when the object is frozen, we can override
-the `NON_FROZEN_FIELDS` to allow it.
+```python
+from django_fsm import FSMField
+
+from django_fsm_freeze.models import FreezableFSMModelMixin
+
+class MyDjangoFSMModel(FreezableFSMModelMixin):
+
+    # In this example, when object is in the 'active' state, it is immutable.
+    FROZEN_IN_STATES = ('active', )
+    
+    # django-fsm specifics: state, transitions, etc.
+    state = FSMField(default='new')
+    # ...
+```
+
+### Customization
+
+#### Tell django-fsm-freeze which field to look up for frozeness
+By default, FreezableFSMModelMixin will look for the FSMField on your model
+and its value to determine whether the instance is frozen or not.
+However, in case your model has multiple `FSMField`s,
+you would need to tell the Mixin which field should be used to look up,
+to determine the frozeness via the `FROZEN_STATE_LOOKUP_FIELD` attribute.
 
 ```python
 from django.db import models
@@ -39,25 +60,22 @@ class MyDjangoFSMModel(FreezableFSMModelMixin):
     # In this example, when object is in the 'active' state, it is immutable.
     FROZEN_IN_STATES = ('active', )
 
-    NON_FROZEN_FIELDS = ('a_mutable_field', )
-
     # Assign this with the name of the `FSMField` if your models has multiple FSMFields.
     # See example in `mytest/models.py:FakeModel2`
     FROZEN_STATE_LOOKUP_FIELD = 'state'
-
-    # This field is mutable even when the object is in the frozen state.
-    a_mutable_field = models.BooleanField()
-
+    
     # django-fsm specifics: state, transitions, etc.
-    # if another name than `state` is chosen, then you need to customize FSM_STATE_FIELD_NAME
     state = FSMField(default='new')
+    another_state = FSMField(default='draft')
     # ...
-
 ```
 
-See configuration example in https://github.com/ming-tung/django-fsm-freeze/blob/main/mytest/models.py
-
-Additionally, if the state is resolvable to another model, using foreign keys, it is possible to specify to path to that field to instruct the freezable model instance to evaluate the freezable state from that remote field.
+In another case, when the desired lookup state is on another model related
+via foreign key, instead of setting `FROZEN_STATE_LOOKUP_FIELD`,
+it is possible to specify the (dot-separated) path to that field in
+`FROZEN_DELEGATE_TO`.
+This setting instructs the freezable model instance to evaluate the freezable
+state from that remote field.
 
 ```python
 class Parent(FreezableFSMModelMixin):
@@ -71,6 +89,23 @@ class Child(FreezableFSMModelMixin):
     FROZEN_DELEGATE_TO = 'parent'
     parent = models.ForeignKey(Parent, on_delete=models.PROTECT)
 ```
+
+#### Define for partial mutability 
+In case we want to mutate certain fields when the object is frozen, we can
+set the `NON_FROZEN_FIELDS` to allow it.
+
+```python
+class MyDjangoFSMModel(FreezableFSMModelMixin):
+
+    # In this example, when object is in the 'active' state, it is immutable.
+    FROZEN_IN_STATES = ('active', )
+    NON_FROZEN_FIELDS = ('a_mutable_field', )
+
+    # This field is mutable even when the object is in the frozen state.
+    a_mutable_field = models.BooleanField()
+```
+See configuration example in https://github.com/ming-tung/django-fsm-freeze/blob/main/mytest/models.py
+
 ## Usage
 
 The frozen check takes place when
@@ -79,10 +114,14 @@ The frozen check takes place when
  - `object.delete()`
 
 In case of trying to save/delete a frozen object, a `FreezeValidationError` will be raised.
+In case of misconfiguration, a `FreezeConfigurationError` will be raised.
 
+
+### Bypassing
 If you want to bypass the frozen check for some reason, you can use the contextmanager
-`bypass_fsm_freeze()` given the freezable object(s). Then django-fsm-freeze won't do the
-checking on `.save()` and `.delete()`.
+`bypass_fsm_freeze()`, with the freezable object(s) that you want to bypass
+the checks on, or apply the bypass globally via `bypass_globally` argument.
+
 You can find some usage example in test `mytest/test_models.py:TestBypassFreezeCheck`.
 
 ## Developing
