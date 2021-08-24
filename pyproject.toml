@@ -22,6 +22,7 @@ black = "^21.6b0"
 pytest-django = "^4.4.0"
 django-stubs = "^1.8.0"
 pytest-cov = "^2.12.1"
+pytest-mock = "^3.6.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

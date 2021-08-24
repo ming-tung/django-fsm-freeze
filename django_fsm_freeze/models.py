@@ -1,7 +1,7 @@
 import threading
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Iterable, Optional, Union
+from typing import Any, Iterable, Optional, Union
 
 from dirtyfields import DirtyFieldsMixin
 from django.core.exceptions import FieldDoesNotExist
@@ -53,6 +53,15 @@ def bypass_fsm_freeze(
             obj._bypass_fsm_freeze = False
 
 
+def resolve_dotted_path(instance: Any, path: str) -> Any:
+    """
+    Walk recursively the path separated by dots.
+    """
+    for part in path.split('.'):
+        instance = getattr(instance, part)
+    return instance
+
+
 class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
     class Meta:
         abstract = True
@@ -60,6 +69,7 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
     FROZEN_IN_STATES: tuple = ()
     NON_FROZEN_FIELDS: tuple = ()
     FROZEN_STATE_LOOKUP_FIELD: Optional[str]
+    FROZEN_DELEGATE_TO: Optional[str] = None
 
     _bypass_fsm_freeze: bool = False
 
@@ -67,8 +77,29 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
     def is_fsm_frozen(self) -> bool:
         """Determine whether self is frozen or not."""
 
-        fsm_field = self.__class__._get_fsm_field()
-        return fsm_field.value_from_object(self) in self.FROZEN_IN_STATES
+        instance, fsm_field = self._resolve_delegation()
+        return (
+            fsm_field.value_from_object(instance) in instance.FROZEN_IN_STATES
+        )
+
+    def _resolve_delegation(self) -> tuple['FreezableFSMModelMixin', FSMField]:
+        """
+        Find the FreezableFSMModelMixin instance and its FSMState field
+        """
+
+        if self.FROZEN_DELEGATE_TO:
+            instance = resolve_dotted_path(self, self.FROZEN_DELEGATE_TO)
+            if not isinstance(instance, FreezableFSMModelMixin):
+                raise FreezeConfigurationError(
+                    {
+                        'FROZEN_DELEGATE_TO': [
+                            'Does not resolve to a'
+                            ' FreezableFSMModelMixin model.'
+                        ]
+                    }
+                )
+            return instance, instance.__class__._get_fsm_field()
+        return self, self.__class__._get_fsm_field()
 
     @property
     def _is_fsm_freeze_bypassed(self) -> bool:
@@ -86,17 +117,17 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
         if self._is_fsm_freeze_bypassed or not self.is_fsm_frozen:
             return
         errors = defaultdict(list)
-        fsm_field = self.__class__._get_fsm_field()
+        instance, fsm_field = self._resolve_delegation()
         dirty_fields = self.get_dirty_fields(check_relationship=True)
         for field in set(dirty_fields) - set(
-            self.NON_FROZEN_FIELDS + (fsm_field.name,)
+            instance.NON_FROZEN_FIELDS + (fsm_field.name,)
         ):
             errors[field].append('Cannot change frozen field.')
         if errors:
             raise FreezeValidationError(errors)
 
     @classmethod
-    def _get_fsm_field(cls) -> models.Field:
+    def _get_fsm_field(cls) -> FSMField:
         """Discover the FSMField.
 
         If multiples are found, we use FROZEN_STATE_LOOKUP_FIELD to select it.
@@ -124,12 +155,24 @@ class FreezableFSMModelMixin(DirtyFieldsMixin, models.Model):
     @classmethod
     def config_check(cls) -> None:
         errors = defaultdict(list)
-        try:
-            cls._get_fsm_field()
-        except FieldDoesNotExist:
-            errors['FROZEN_STATE_LOOKUP_FIELD'].append('FSMField not found.')
-        except TypeError as err:
-            errors['FROZEN_STATE_LOOKUP_FIELD'].append(str(err))
+        if cls.FROZEN_DELEGATE_TO:
+            if cls.FROZEN_IN_STATES:
+                errors['FROZEN_IN_STATES'].append(
+                    'Field FROZEN_DELEGATE_TO is already defined.'
+                )
+            if getattr(cls, 'FROZEN_STATE_LOOKUP_FIELD', None):
+                errors['FROZEN_STATE_LOOKUP_FIELD'].append(
+                    'Field FROZEN_DELEGATE_TO is already defined.'
+                )
+        else:
+            try:
+                cls._get_fsm_field()
+            except FieldDoesNotExist:
+                errors['FROZEN_STATE_LOOKUP_FIELD'].append(
+                    'FSMField not found.'
+                )
+            except TypeError as err:
+                errors['FROZEN_STATE_LOOKUP_FIELD'].append(str(err))
 
         for field in cls.NON_FROZEN_FIELDS:
             try:

@@ -12,6 +12,10 @@ class FakeStates(Enum):
     ARCHIVED = 'archived'
 
 
+class NonFSMModel(models.Model):
+    pass
+
+
 class FakeModel(FreezableFSMModelMixin):
 
     FROZEN_IN_STATES = (
@@ -40,6 +44,27 @@ class FakeModel(FreezableFSMModelMixin):
     )
     def archive(self, *args, **kwargs) -> None:
         pass
+
+
+class SubFakeModel(FreezableFSMModelMixin):
+    FROZEN_DELEGATE_TO = 'fake_model'
+    NON_FROZEN_FIELDS = ('can_change_me',)
+
+    fake_model = models.ForeignKey(FakeModel, on_delete=models.PROTECT)
+    another_model = models.ForeignKey(
+        NonFSMModel, on_delete=models.SET_DEFAULT, null=True, default=None
+    )
+    can_change_me = models.BooleanField(default=False)
+    cannot_change_me = models.BooleanField(default=False)
+
+
+class SubSubFakeModel(FreezableFSMModelMixin):
+    FROZEN_DELEGATE_TO = 'sub_fake_model.fake_model'
+    NON_FROZEN_FIELDS = ('can_change_me',)
+
+    sub_fake_model = models.ForeignKey(SubFakeModel, on_delete=models.PROTECT)
+    can_change_me = models.BooleanField(default=False)
+    cannot_change_me = models.BooleanField(default=False)
 
 
 class FakeModel2(FreezableFSMModelMixin):
