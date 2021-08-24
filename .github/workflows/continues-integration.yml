@@ -13,6 +13,8 @@ jobs:
   run-test:
     name: Run Tests
     runs-on: ubuntu-latest
+    env:
+      COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
     steps:
       - uses: actions/checkout@v2
       - name: Setup Python ${{ env.PYTHON_VERSION }}
@@ -42,6 +44,9 @@ jobs:
       - name: Run pytest
         run: |
           poetry run pytest --cov=django_fsm_freeze
+      - name: Send coverage
+        run: |
+          poetry run coveralls
 
   deploy:
     name: Build and Publish on release
