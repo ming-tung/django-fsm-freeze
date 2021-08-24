@@ -154,11 +154,12 @@ class TestBypassFreezeCheck:
     def test_bypass_fsm_freeze_empty(self, active_fake_obj):
         active_fake_obj.cannot_change_me = True
 
-        with bypass_fsm_freeze():  # empty input, i.e. globally bypassed
-            active_fake_obj.save()
+        with pytest.raises(FreezeValidationError):
+            with bypass_fsm_freeze():  # empty input, i.e. nothing bypassed
+                active_fake_obj.save()
 
         active_fake_obj.refresh_from_db()
-        assert active_fake_obj.cannot_change_me is True
+        assert active_fake_obj.cannot_change_me is False
 
     def test_bypass_fsm_freeze_input_list(self, active_fake_obj):
         active_fake_obj.cannot_change_me = True
@@ -212,7 +213,7 @@ class TestBypassFreezeCheck:
         active_fake_obj.cannot_change_me = True
         active_fake2_obj.cannot_change_me = True
 
-        with bypass_fsm_freeze():
+        with bypass_fsm_freeze(bypass_globally=True):
             active_fake_obj.save()
             active_fake2_obj.save()
 
@@ -221,15 +222,13 @@ class TestBypassFreezeCheck:
         assert active_fake_obj.cannot_change_me is True
         assert active_fake2_obj.cannot_change_me is True
 
-        with bypass_fsm_freeze():
+        with bypass_fsm_freeze(bypass_globally=True):
             active_fake_obj.delete()
             active_fake2_obj.delete()
 
         assert FakeModel.objects.count() == 0
 
-    def test_bypass_input_objs_and_global(
-        self, active_fake_obj, active_fake2_obj
-    ):
+    def test_bypass_input_objs(self, active_fake_obj, active_fake2_obj):
         active_fake_obj.cannot_change_me = True
         active_fake2_obj.cannot_change_me = True
 

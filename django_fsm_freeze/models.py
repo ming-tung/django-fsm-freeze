@@ -23,12 +23,10 @@ def bypass_fsm_freeze(
     objs: Union[
         'FreezableFSMModelMixin', Iterable['FreezableFSMModelMixin']
     ] = (),
+    bypass_globally: bool = False,
 ):
-    if use_local_bypass := bool(objs):
-        if not isinstance(objs, Iterable):
-            objs = (objs,)
-    else:
-        objs = ()
+    if objs and not isinstance(objs, Iterable):
+        objs = (objs,)
     errors = []
     for obj in objs:
         if not isinstance(obj, FreezableFSMModelMixin):
@@ -41,13 +39,13 @@ def bypass_fsm_freeze(
         raise FreezeConfigurationError(errors)
 
     try:
-        if not use_local_bypass:
+        if bypass_globally is True:
             _DISABLED_FSM_FREEZE.active = True
         for obj in objs:
             obj._bypass_fsm_freeze = True
         yield
     finally:
-        if not use_local_bypass:
+        if bypass_globally is True:
             _DISABLED_FSM_FREEZE.active = False
         for obj in objs:
             obj._bypass_fsm_freeze = False
