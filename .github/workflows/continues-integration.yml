@@ -4,15 +4,13 @@ on:
   push:
     branches:
       - main
-  pull_request_target:
+  pull_request:
 env:
   PYTHON_VERSION: 3.9
 jobs:
   run-test:
     name: Run Tests
     runs-on: ubuntu-latest
-    env:
-      COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
     steps:
       - uses: actions/checkout@v2
       - name: Setup Python ${{ env.PYTHON_VERSION }}
@@ -41,7 +39,8 @@ jobs:
           poetry run flake8 .
       - name: Run pytest
         run: |
-          poetry run pytest --cov=django_fsm_freeze
-      - name: Send Coverage
-        run: |
-          poetry run coveralls
+          poetry run pytest --cov=./ --cov-report=xml
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          fail_ci_if_error: true
