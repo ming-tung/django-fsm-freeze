@@ -1,15 +1,13 @@
-name: Continues Integration
-
+name: Publish to PyPI
 on:
-  push:
-    branches:
-      - main
-  pull_request:
+  # Only publish the package when a release is published
+  release:
+    types: [published]
 env:
   PYTHON_VERSION: 3.9
 jobs:
-  run-test:
-    name: Run Tests
+  deploy:
+    name: Build and Publish on release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -25,18 +23,7 @@ jobs:
           key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
       - run: |
           poetry --version
-      - name: Install dependencies
+      - name: Build and Push to PyPI
         run: |
-          poetry install
-      - name: Run isort
-        run: |
-          poetry run isort . --check
-      - name: Run black
-        run: |
-          poetry run black --check --diff .
-      - name: Run flake8
-        run: |
-          poetry run flake8 .
-      - name: Run pytest
-        run: |
-          poetry run pytest --cov=django_fsm_freeze
+          poetry config pypi-token.pypi ${{ secrets.POETRY_CI_TOKEN }}
+          poetry publish --build --no-interaction

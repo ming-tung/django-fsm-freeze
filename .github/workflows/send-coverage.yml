@@ -1,16 +1,21 @@
-name: Continues Integration
+name: Send Coverage Result
 
+# access to secrets
+# only if the workflow has completed successfully
 on:
-  push:
-    branches:
-      - main
-  pull_request:
+  workflow_run:
+    workflows: ["Continues Integration"]
+    types: [completed]
 env:
   PYTHON_VERSION: 3.9
 jobs:
-  run-test:
-    name: Run Tests
+  send-coveralls:
+    name: Send coverage result to coveralls
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
     steps:
       - uses: actions/checkout@v2
       - name: Setup Python ${{ env.PYTHON_VERSION }}
@@ -28,15 +33,6 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install
-      - name: Run isort
+      - name: Send coverage
         run: |
-          poetry run isort . --check
-      - name: Run black
-        run: |
-          poetry run black --check --diff .
-      - name: Run flake8
-        run: |
-          poetry run flake8 .
-      - name: Run pytest
-        run: |
-          poetry run pytest --cov=django_fsm_freeze
+          poetry run coveralls
