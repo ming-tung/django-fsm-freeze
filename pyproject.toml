@@ -43,3 +43,14 @@ force_grid_wrap = 0
 use_parentheses = true
 ensure_newline_before_comments = true
 skip = ["mytest/migrations/", ".venv/",]
+
+[tool.mypy]
+files = "django_fsm_freeze"
+
+[[tool.mypy.overrides]]
+module = "dirtyfields"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "django_fsm"
+ignore_missing_imports = true
