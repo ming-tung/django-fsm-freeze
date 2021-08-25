@@ -5,15 +5,14 @@ on:
     branches:
       - main
   pull_request_target:
-  pull_request:
-  release:
-    types: [published]
 env:
   PYTHON_VERSION: 3.9
 jobs:
   run-test:
     name: Run Tests
     runs-on: ubuntu-latest
+    env:
+      COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
     steps:
       - uses: actions/checkout@v2
       - name: Setup Python ${{ env.PYTHON_VERSION }}
@@ -44,33 +43,5 @@ jobs:
         run: |
           poetry run pytest --cov=django_fsm_freeze
       - name: Send Coverage
-        if: github.event_name == 'pull_request_target'
-        env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
         run: |
           poetry run coveralls
-  deploy:
-    name: Build and Publish on release
-    # Only publish the package when a release is published
-    if: github.event.action == 'published'
-    needs:
-      - run-test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Setup Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Setup poetry
-        uses: Gr1N/setup-poetry@v7
-      - uses: actions/cache@v2
-        with:
-          path: ~/.cache/pypoetry/virtualenvs
-          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
-      - run: |
-          poetry --version
-      - name: Build and Push to PyPI
-        run: |
-          poetry config pypi-token.pypi ${{ secrets.POETRY_CI_TOKEN }}
-          poetry publish --build --no-interaction
