@@ -118,7 +118,7 @@ Django = ">=1.11"
 
 [[package]]
 name = "django-fsm"
-version = "2.7.1"
+version = "2.8.0"
 description = "Django friendly finite state machine support."
 category = "main"
 optional = false
@@ -517,8 +517,8 @@ django-dirtyfields = [
     {file = "django_dirtyfields-1.7.0-py3-none-any.whl", hash = "sha256:ed8d780d439281372ca1dd301b21d6536b950dad3c32f95740e8236c0ed423bc"},
 ]
 django-fsm = [
-    {file = "django-fsm-2.7.1.tar.gz", hash = "sha256:219b204777a932720d8583cb1f34713bd08b4713e1beb39ab2e674810e21d5e9"},
-    {file = "django_fsm-2.7.1-py2.py3-none-any.whl", hash = "sha256:c96a844853de0f5dc67791b64beb367b5d56f992dff7c00f9b88c483e09f15ec"},
+    {file = "django-fsm-2.8.0.tar.gz", hash = "sha256:4649167bf5bd4b2990dd682644d71b52650f120005a98755cfffc1a047a555d2"},
+    {file = "django_fsm-2.8.0-py2.py3-none-any.whl", hash = "sha256:cb7230d84fd25d3db9f9473e0a1b9140a61aa46ea88042f73e3cb2760637e92a"},
 ]
 django-stubs = [
     {file = "django-stubs-1.9.0.tar.gz", hash = "sha256:664843091636a917faf5256d028476559dc360fdef9050b6df87ab61b21607bf"},
