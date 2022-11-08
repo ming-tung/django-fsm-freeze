@@ -106,14 +106,14 @@ bcrypt = ["bcrypt"]
 
 [[package]]
 name = "django-dirtyfields"
-version = "1.8.2"
+version = "1.9.0"
 description = "Tracking dirty fields on a Django model instance."
 category = "main"
 optional = false
 python-versions = ">=3.7"
 
 [package.dependencies]
-Django = ">=1.11"
+Django = ">=2.0"
 
 [[package]]
 name = "django-fsm"
@@ -509,8 +509,8 @@ Django = [
     {file = "Django-4.1.2.tar.gz", hash = "sha256:b8d843714810ab88d59344507d4447be8b2cf12a49031363b6eed9f1b9b2280f"},
 ]
 django-dirtyfields = [
-    {file = "django-dirtyfields-1.8.2.tar.gz", hash = "sha256:629d506572f13d1985761581e9f525c4aaeba38b45260268bc6950221e85c9fc"},
-    {file = "django_dirtyfields-1.8.2-py3-none-any.whl", hash = "sha256:63b6e42a2e43d51d61d836378d2c40b260cbcf4d4696dcea51d42375de9b340f"},
+    {file = "django-dirtyfields-1.9.0.tar.gz", hash = "sha256:083e67d973f9c9f23719202e656b9b4edc1e5868d22830a470a6df1217bdb81a"},
+    {file = "django_dirtyfields-1.9.0-py3-none-any.whl", hash = "sha256:61b55d3b46d07b5f6d806476072892acfd09e417c4f7f466122c050a165059bc"},
 ]
 django-fsm = [
     {file = "django-fsm-2.8.1.tar.gz", hash = "sha256:fd9f8de9f33188e50f876ce53908fbd7289e5031a44ffdb97d43909e56699ef8"},
