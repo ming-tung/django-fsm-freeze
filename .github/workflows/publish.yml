@@ -16,7 +16,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Setup poetry
-        uses: Gr1N/setup-poetry@v8
+        uses: Gr1N/setup-poetry@v9
       - uses: actions/cache@v3
         with:
           path: ~/.cache/pypoetry/virtualenvs
